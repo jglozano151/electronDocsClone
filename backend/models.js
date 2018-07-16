@@ -21,11 +21,38 @@ var userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true
+  },
+  docs: {
+    type: Array
   }
 });
 
+var docSchema = new mongoose.Schema({
+  owner: {
+    type: String,
+    required: true
+  },
+  title: {
+    type: String,
+    required: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  collaborators: {
+    type: Array,
+    required: true
+  },
+  text: {
+    type: String,
+    required: true
+  }
+});
+
+
 var User = mongoose.model('User', userSchema);
-// var Doc = mongoose.model('Doc', DocSchema);
+var Doc = mongoose.model('Doc', docSchema);
 
 module.exports = {
   User: User,
