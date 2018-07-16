@@ -6,7 +6,7 @@ const socket = io('http://localhost:8080')
 const Homepage = require('./comp/homepage').default
 const Signup = require('./comp/signup').default
 const DocList = require('./comp/docList').default
-// const DocumentView = require('./comp/documentview').default
+import DocumentView from './comp/documentview'
 
 
 export default class App extends React.Component {
@@ -31,7 +31,7 @@ export default class App extends React.Component {
     this.state.page === homepage ? <Homepage socket={this.state.socket} /> : null
     this.state.page === signup ? <Signup socket={this.state.socket} /> : null
     this.state.page === docList ? <DocList socket={this.state.socket} userId={this.state.userId} docArr={this.state.docArr}/> : null
-    // this.state.page === documentview ? <DocumentView docId={this.state.docId} socket={this.state.socket} /> : null
+    this.state.page === documentview ? <DocumentView docId={this.state.docId} socket={this.state.socket} /> : null
   }
 
 }
