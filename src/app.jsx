@@ -22,7 +22,7 @@ export default class App extends React.Component {
 
   componentDidMount() {
     socket.on('homepage', () => this.setState({page:'homepage'}))
-    socket.on('signup', () => this.setState({page:'signup'})
+    socket.on('signup', () => this.setState({page:'signup'}))
     socket.on('docList', (obj) => this.setState({page:'docList', userId:obj.id, docArr:obj.docs}))
     socket.on('error', (obj) => alert(obj.msg))
   }
