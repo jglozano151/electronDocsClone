@@ -1,6 +1,19 @@
 // ROUTES
 import React from 'react'
 import Modal from 'react-modal'
+import RaisedButton from 'material-ui/RaisedButton';
+import Card from '@material-ui/core/Card';
+import Button from '@material-ui/core/Button';
+import CardContent from '@material-ui/core/CardContent';
+import Typography from '@material-ui/core/Typography';
+import Chip from '@material-ui/core/Chip';
+import Avatar from '@material-ui/core/Avatar';
+import AddIcon from '@material-ui/icons/Add';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+import Fade from '@material-ui/core/Fade';
+import Popover from '@material-ui/core/Popover';
+import Input from '@material-ui/core/Input';
 
 export default class DocList extends React.Component {
   constructor(props) {
@@ -124,53 +137,68 @@ export default class DocList extends React.Component {
 
   render() {
     return (
-      <div>
-        <h2>Document List</h2>
-
-        <button onClick={()=>this.openNewModal()}>New Document</button>
-        <Modal isOpen={this.state.newModalIsOpen}>
-          <h2>Create a New Document</h2>
-          Title: <input placeholder="Title"
+      <Card>
+        <CardContent>
+          <Typography variant = "headline" style = {{margin: '10px'}}> Document List  </Typography>
+          <div>
+            <Button style = {buttonStyle} variant = "contained"
+              onClick={()=>this.openNewModal()}> New Document
+            </Button>
+            <Modal isOpen={this.state.newModalIsOpen}>
+              <Typography variant = "headline" style = {{marginBottom: '20px'}}> Create a New Document </Typography>
+              <Input style = {{marginBottom: '10px', marginRight: '10px'}}
+                placeholder="Title"
                 value={this.state.newDocTitle}
                 onChange={(e)=>this.setState({newDocTitle:e.target.value})}/>
-          Password: <input type="password"
-                          placeholder="Password"
-                          value={this.state.newDocPassword}
-                          onChange={(e)=>this.setState({newDocPassword:e.target.value})}/>
-          <button onClick={()=>this.saveNewModal()}>Create</button>
-          <button onClick={()=>this.cancelNewModal()}>Cancel</button>
-        </Modal>
-
-        <ul>
+              <Input type="password" style = {{marginBottom: '10px'}}
+                placeholder="Password"
+                value={this.state.newDocPassword}
+                onChange={(e)=>this.setState({newDocPassword:e.target.value})}/>
+              <div>
+                <Button style = {buttonStyle} variant = "contained"
+                  onClick={()=>this.saveNewModal()}> Create </Button>
+                <Button style = {buttonStyle} variant = "contained"
+                  onClick={()=>this.cancelNewModal()}> Cancel </Button>
+              </div>
+            </Modal>
+            <Button style = {buttonStyle} variant = "contained"
+              onClick={()=>this.openCollabModel()}> Join Document</Button>
+            <Modal isOpen={this.state.collabModalIsOpen}>
+              <Typography variant = "headline" style = {{marginBottom: '20px'}}>
+                Join a Document as Collaborator </Typography>
+              <Input style = {{marginBottom: '10px', marginRight: '10px'}} placeholder="Document ID"
+                    value={this.state.collabDocID}
+                    onChange={(e)=>this.setState({collabDocID:e.target.value})}/>
+              <Input type="password" style = {{marginBottom: '10px'}}
+                placeholder="Password"
+                value={this.state.collabDocPassword}
+                onChange={(e)=>this.setState({collabDocPassword:e.target.value})}/>
+              <div>
+                <Button style = {buttonStyle} variant = "contained" onClick={()=>this.joinCollabModal()}>Join</Button>
+                <Button style = {buttonStyle} variant = "contained" onClick={()=>this.cancelCollabModal()}>Cancel</Button>
+              </div>
+            </Modal>
+          </div>
           {this.state.docList.map(item => (
-            <li onClick={() => this.viewDoc(item._id)}>
-              Title: {item.title}
-              Author: {item.owner}
-              Collaborators: {item.collaborators}
-            </li>
+            <Card>
+              <CardContent>
+                <Button style = {buttonStyle} variant = "contained" onClick = {() => this.viewDoc(item._id)}>
+                  <Typography> {item.title} </Typography>
+                </Button>
+                <Typography> Author: {item.owner} </Typography>
+                <Typography> Collaborators: {item.collaborators} </Typography>
+              </CardContent>
+            </Card>
           ))}
-        </ul>
-
-        <button onClick={()=>this.openCollabModel()}>Join Document</button>
-        <Modal isOpen={this.state.collabModalIsOpen}>
-          <h2>Join a document as collaborator</h2>
-          Document ID: <input placeholder="Document ID"
-                value={this.state.collabDocID}
-                onChange={(e)=>this.setState({collabDocID:e.target.value})}/>
-          Password: <input type="password"
-                          placeholder="Password"
-                          value={this.state.collabDocPassword}
-                          onChange={(e)=>this.setState({collabDocPassword:e.target.value})}/>
-          <button onClick={()=>this.joinCollabModal()}>Join</button>
-          <button onClick={()=>this.cancelCollabModal()}>Cancel</button>
-        </Modal>
-
-
-      </div>
+        </CardContent>
+      </Card>
     )
   }
 }
 
+const buttonStyle = {
+  margin: '10px'
+}
 // SOCKET
 // import React from 'react'
 // import Modal from 'react-modal'
