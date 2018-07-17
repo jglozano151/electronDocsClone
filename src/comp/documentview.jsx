@@ -66,6 +66,9 @@ export default class DocumentView extends React.Component {
         console.log(err)
       })
   }
+  viewList(userId) {
+    this.props.changePage('docList', userId, null)
+  }
   // Modal functions
   handleOpen = event => {
     this.setState({anchorEl: event.currentTarget})
@@ -133,7 +136,7 @@ export default class DocumentView extends React.Component {
       <div>
         <Card>
           <CardContent>
-            <Typography variant = "headline"> Edit Document </Typography>
+            <Typography variant = "headline"> Edit Document <Button onClick = {() => this.viewList(this.props.userId)} style = {{buttonStyle}} variant = "contained"/> </Typography>
           </CardContent>
         </Card>
         <Card style = {buttonStyle}>

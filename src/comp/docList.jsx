@@ -134,7 +134,6 @@ export default class DocList extends React.Component {
     this.props.changePage('documentview', this.props.userId, docId)
   }
 
-
   render() {
     return (
       <Card>
