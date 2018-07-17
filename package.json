@@ -12,7 +12,9 @@
     "lint": "eslint --cache --color --ext .jsx,.js src",
     "backend-dev": "nodemon server/index.js --exec babel-node --presets es2015",
     "backend-build": "babel server -d server-dist --presets es2015,stage2",
-    "backend-serve": "node server-dist/index.js"
+    "backend-serve": "node server-dist/index.js",
+    "server": "nodemon server.js"
+
   },
   "keywords": [],
   "author": "jgloz",
