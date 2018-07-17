@@ -100,40 +100,90 @@ app.post('/newDoc', function(req, res) {
     owner: req.body.userId,
     title: req.body.title,
     password: req.body.password,
-    collaborators: [req.body.userId],
+    collaborators: [req.body.userId], //first collaborator is owner
     text: ''
   });
 
-  newDoc.save(function(err, success) {    /* REWRITE: .then()s instead of if/elses */
-    if (err) {res.json({success: false})}
-    else {
-      var userDocs;
-
-      User.findById(req.body.userId, function(error, user) {
-        if (error) {res.json({success: false})}
-        else {
-          userDocs = user.docs.slice();
-          userDocs = userDocs.concat([success._id]);  //success._id is id of doc that was just saved
-
-          User.findByIdAndUpdate(req.body.userId, {docs: userDocs}, function(error2, result2) {
-            if (error2) {res.json({success: false})}
-            else res.json({success: true, docId: success._id})
-          })
+  newDoc.save()
+  .then((doc) => {
+    User.findById(req.body.userId,
+      {
+        "$push": {
+          docs: {
+            "$each": [doc._id]
+          }
         }
-      })
-    }
+      },
+      function(err, result) {
+        if (err) {
+          console.log(err)
+          res.json({success: false})}
+        else {
+          res.json({success : true, docId:doc._id})
+        }
+      }
+    )
   })
 })
 
+// app.post('/newDoc', function(req, res) {
+//   const newDoc = new Doc ({
+//    owner: req.body.userId,
+//     title: req.body.title,
+//     password: req.body.password,
+//     collaborators: [req.body.userId],
+//     text: ''
+//   });
+//
+//   newDoc.save(function(err, success) {    /* REWRITE: .then()s instead of if/elses */
+//     if (err) {res.json({success: false})}
+//     else {
+//       var userDocs;
+//       User.findById(req.body.userId, function(error, user) {
+//         if (error) {res.json({success: false})}
+//         else {
+//           userDocs = user.docs.slice();
+//           userDocs = userDocs.concat([success._id]);  //success._id is id of doc that was just saved
+//
+//           User.findByIdAndUpdate(req.body.userId, {docs: userDocs}, function(error2, result2) {
+//             if (error2) {res.json({success: false})}
+//             else res.json({success: true, docId: success._id})
+//           })
+//         }
+//       })
+//     }
+//   })
+//
+//   Promise.all(collabArr)
+//   .then( () => {
+//     return Promise.all(collabArr.map( (obj) => {
+//       let id = obj.id
+//       let docs = obj.docs
+//       return User.findByIdAndUpdate(id, {docs: docs}).exec()
+//     }))
+//   })
+//   .then(() => {
+//     Doc.findByIdAndUpdate(docId, {collaborators: collabIDs}, function(err) {
+//       if (err) res.json({success: false})
+//       else {
+//         res.json({success: true,
+//           docId: docId});
+//       }
+//     })
+//   })
+//   .catch((err) => res.json({success:false}))
+// })
+
+
 app.post('/addCollaborators', function(req, res) {
-  collabArr = req.body.collaborators.split(', ')  // add .trim to each if necessary
-  collabIDs = [];
+  let collabArr = req.body.collaborators  // add .trim to each if necessary
+  let collabIDs = [];
   collabArr = collabArr.map((email) => {
     User.find({email: email.trim()}, function (err, user) {
       if (err) return email.trim()
       else {
         collabIDs.push(user._id);
-        return {id: user._id, docs: user.docs.concat([docId])}
+        return {id: user._id, docs: user.docs.concat([req.body.docId])}
       }
     })
   })
@@ -147,11 +197,11 @@ app.post('/addCollaborators', function(req, res) {
     }))
   })
   .then(() => {
-    Doc.findByIdAndUpdate(docId, {collaborators: collabIDs}, function(err) {
+    Doc.findByIdAndUpdate(req.body.docId, {collaborators: collabIDs}, function(err) {
       if (err) res.json({success: false})
       else {
         res.json({success: true,
-          docId: docId});
+          docId: req.body.docId});
       }
     })
   })
@@ -221,7 +271,6 @@ app.get('/getDocList/:userId', function (req, res) {
         return Doc.findById(docId).exec()
       }))
       .then(arr => {
-        console.log(arr)
         res.json({success: true, docs: arr})})
       .catch(err=> console.log(err))
     }
@@ -231,7 +280,7 @@ app.get('/getDocList/:userId', function (req, res) {
 
 
 
-app.get('documentview/:userId/:docId', function(req, res) {
+app.get('/documentview/:userId/:docId', function(req, res) {
   //consider case where userId does not have persmission to view this doc (not an owner or collaborator)
   Doc.findById(req.params.docId, function(error, foundDoc) {
     if (error) res.status(404)

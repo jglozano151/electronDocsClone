@@ -23,7 +23,6 @@ export default class DocList extends React.Component {
     .then(response => (response.json()))
     .then((res) => {
       if (res.success) {
-        console.log(res)
         this.setState({
           docList: res.docs
         })
@@ -144,7 +143,7 @@ export default class DocList extends React.Component {
 
         <ul>
           {this.state.docList.map(item => (
-            <li onClick={() => this.viewDoc(item.id)}>
+            <li onClick={() => this.viewDoc(item._id)}>
               Title: {item.title}
               Author: {item.owner}
               Collaborators: {item.collaborators}
