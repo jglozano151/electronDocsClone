@@ -11,6 +11,7 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Fade from '@material-ui/core/Fade';
 import Popover from '@material-ui/core/Popover';
+import Input from '@material-ui/core/Input';
 // import Button from 'semantic-ui-react';
 import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToRaw} from 'draft-js';
 
@@ -28,7 +29,8 @@ export default class DocumentView extends React.Component {
       leftAlign: true,
       centerAlign: false,
       rightAlign: false,
-      anchorEl: null
+      anchorEl: null,
+      newCollabs: [],
     }
     this.onChange = (editorState) => {
       this.setState({editorState})
@@ -62,7 +64,22 @@ export default class DocumentView extends React.Component {
     this.setState({anchorEl: event.currentTarget})
   }
   handleClose = () => {
-    this.setState({anchorEl: null})
+    this.setState({anchorEl: null, newCollabs: []})
+  }
+  updateCollabs = (e) => {
+    let collaborators = e.target.value.split(',')
+    this.setState({newCollabs: collaborators})
+  }
+  saveCollabs = () => {
+    console.log(this.state.newCollabs)
+    fetch(this.props.url + '/addCollaborator/' + this.props.docId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: {collaborators: this.state.newCollabs}
+    })
+      .then(this.setState({newCollabs: []}))
   }
   // Changing text style functions
   _onBoldClick(e) {
@@ -95,16 +112,6 @@ export default class DocumentView extends React.Component {
       body: {text: saveData}
     })
   }
-  addCollaborator = (emails) => {
-    let collaborators = emails.split(',')
-    fetch(this.props.url + '/addCollaborator/' + this.props.docId, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: {collaborators: collaborators}
-    })
-  }
   // Font Color, Font Size, Left/center/right align paragraph, bullet/numbered lists
   render() {
     const { anchorEl } = this.state
@@ -128,9 +135,14 @@ export default class DocumentView extends React.Component {
               onClose = {this.handleClose}
               anchorOrigin = {{vertical: 'button', horizontal: 'center'}}
               transformOrigin = {{vertical: 'top', horizontal: 'center'}}
-              style = {popoverStyle}
             >
-              <Typography> Enter the Emails of the Users That You Want To Add, Separated By Comma </Typography>
+              <div style = {popoverStyle}>
+                <Typography style = {popoverStyle}> Enter the Emails of the Users That You Want To Add, Separated By Comma </Typography>
+                <div>
+                  <Input onChange = {this.updateCollabs}/>
+                  <Button variant = 'contained' onClick = {this.saveCollabs}> Add </Button>
+                </div>
+              </div>
             </Popover>
             <Button style = {buttonStyle} variant = "contained" color = "primary"
               style = {buttonStyle} onMouseDown = {(e) => this.saveFile(e)}>
@@ -181,5 +193,5 @@ const buttonStyle = {
 }
 
 const popoverStyle = {
-  padding: '20px 50px'
+  padding: '15px'
 }
