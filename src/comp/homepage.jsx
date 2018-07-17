@@ -12,15 +12,16 @@ export default class Homepage extends React.Component {
     fetch(this.props.url+'/login', {
       method: 'POST',
       headers: {
-        Content-Type: 'application/json',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         username: this.state.email,
         password: this.state.password,
       })
     })
+    .then(response => (response.json()))
     .then((res) => {
-      if (res.success) {
+      if (res.success) { //Navigate to document list
         this.props.changePage('docList',res.userId, null)
       } else {
         alert('Failed to login')
@@ -41,7 +42,7 @@ export default class Homepage extends React.Component {
               value={this.state.password}
               onChange={(e) => this.setState({password:e.target.value})}/>
         <button onClick={() => this.login()}>Login</button>
-        <button onClick={() => }>Sign Up</button>
+        <button onClick={() => this.props.changePage('signup', null, null)}>Sign Up</button>
       </div>
     )
   }

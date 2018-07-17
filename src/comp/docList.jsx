@@ -8,18 +8,22 @@ export default class DocList extends React.Component {
     this.state = {
       newModalIsOpen: false,
       collabModalIsOpen: false,
+      docList: []
     }
   }
 
+  //Fetch all documents for a user
   componentDidMount() {
     fetch(this.props.url+'/getDocList/' + this.props.userId, {
       method: 'GET',
       headers: {
-        Content-Type: 'application/json',
+        'Content-Type': 'application/json',
       }
     })
+    .then(response => (response.json()))
     .then((res) => {
       if (res.success) {
+        console.log(res)
         this.setState({
           docList: res.docs
         })
@@ -39,7 +43,7 @@ export default class DocList extends React.Component {
     fetch(this.props.url+'/newDoc', {
       method: 'POST',
       headers: {
-        Content-Type: 'application/json',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         userId: this.props.userId,
@@ -47,6 +51,7 @@ export default class DocList extends React.Component {
         password: this.state.newDocPassword
       })
     })
+    .then(response => (response.json()))
     .then((res) => {
       if (res.success) {
         this.setState({
@@ -54,7 +59,7 @@ export default class DocList extends React.Component {
           newDocPassword:'',
           newModalIsOpen: false
         })
-        this.props.changePage('documentview', this.props.userId, res.docId)
+        this.props.changePage('documentview', this.props.userId, res.docId) //Navigate to the created document
       } else {
         alert('Failed to create new document')
       }
@@ -80,7 +85,7 @@ export default class DocList extends React.Component {
     fetch(this.props.url+'/joinDoc', {
       method: 'POST',
       headers: {
-        Content-Type: 'application/json',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         userId: this.props.userId,
@@ -88,6 +93,7 @@ export default class DocList extends React.Component {
         password: this.state.collabDocPassword
       })
     })
+    .then(response => (response.json()))
     .then((res) => {
       if (res.success) {
         this.setState({
@@ -95,7 +101,7 @@ export default class DocList extends React.Component {
           collabDocPassword:'',
           collabModalIsOpen: false
         })
-        this.props.changePage('documentview', this.props.userId, this.state.collabDocID)
+        this.props.changePage('documentview', this.props.userId, this.state.collabDocID) //Navigate to specified document
       } else {
         alert('Failed to join document')
       }
@@ -122,11 +128,8 @@ export default class DocList extends React.Component {
       <div>
         <h2>Document List</h2>
 
-        <button onClick={()=>openNewModal()}>New Document</button>
-        <Modal
-          isOpen={this.state.newModalIsOpen}
-          style={customStyles}
-        >
+        <button onClick={()=>this.openNewModal()}>New Document</button>
+        <Modal isOpen={this.state.newModalIsOpen}>
           <h2>Create a New Document</h2>
           Title: <input placeholder="Title"
                 value={this.state.newDocTitle}
@@ -149,11 +152,8 @@ export default class DocList extends React.Component {
           ))}
         </ul>
 
-        <button onClick={()=>openCollabModel()}>Join Document</button>
-        <Modal
-          isOpen={this.state.collabModalIsOpen}
-          style={customStyles}
-        >
+        <button onClick={()=>this.openCollabModel()}>Join Document</button>
+        <Modal isOpen={this.state.collabModalIsOpen}>
           <h2>Join a document as collaborator</h2>
           Document ID: <input placeholder="Document ID"
                 value={this.state.collabDocID}

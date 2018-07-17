@@ -7,11 +7,12 @@ export default class Signup extends React.Component {
     this.state = {}
   }
 
+  //Sign up
   signup() {
     fetch(this.props.url+'/signup', {
       method: 'POST',
       headers: {
-        Content-Type: 'application/json',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         name: this.state.name,
@@ -19,8 +20,9 @@ export default class Signup extends React.Component {
         password: this.state.password,
       })
     })
+    .then(response => (response.json()))
     .then((res) => {
-      if (res.success) {
+      if (res.success) { // navigate to homepage after successful registration
         this.props.changePage('homepage', null, null)
       } else {
         alert('Failed to sign up')
@@ -43,7 +45,7 @@ export default class Signup extends React.Component {
               value={this.state.password}
               onChange={(e) => this.setState({password:e.target.value})}/>
         <button onClick={() => this.signup()}>Sign Up</button>
-        <button onClick={() => }>Login</button>
+        <button onClick={() => this.props.changePage('homepage', null, null)}>Login</button>
       </div>
     )
   }
