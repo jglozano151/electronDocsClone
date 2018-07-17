@@ -179,7 +179,7 @@ export default class DocList extends React.Component {
             </Modal>
           </div>
           {this.state.docList.map(item => (
-            <Card>
+            <Card style = {{margin: '20px', maxWidth: '300px'}}>
               <CardContent>
                 <Button style = {buttonStyle} variant = "contained" onClick = {() => this.viewDoc(item._id)}>
                   <Typography> {item.title} </Typography>

@@ -152,7 +152,10 @@ export default class DocumentView extends React.Component {
       <div>
         <Card>
           <CardContent>
-            <Typography variant = "headline"> Edit Document <Button onClick = {() => this.viewList(this.props.userId)} style = {{buttonStyle}} variant = "contained"/> </Typography>
+            <Typography variant = "headline">
+              <Button onClick = {() => this.viewList(this.props.userId)} style = {{buttonStyle}} variant = "contained"/>
+              Edit Document
+            </Typography>
           </CardContent>
         </Card>
         <Card style = {buttonStyle}>
@@ -161,7 +164,7 @@ export default class DocumentView extends React.Component {
             <Chip style = {buttonStyle} avatar = {<Avatar> JL </Avatar>} label = 'Joe Lozano'/>
             <Chip style = {buttonStyle} avatar = {<Avatar> IC </Avatar>} label = 'Isabelle Chun'/>
             <Chip style = {buttonStyle} avatar = {<Avatar> YS </Avatar>} label = 'Yuna Shin'/>
-            <Button onClick = {this.handleOpen}> Add Users </Button>
+            <Button variant = "fab" color = "primary" onClick = {this.handleOpen}> <AddIcon/> </Button>
             <Popover
               open = {Boolean(anchorEl)}
               anchorEl = {anchorEl}
@@ -173,7 +176,8 @@ export default class DocumentView extends React.Component {
                 <Typography style = {popoverStyle}> Enter the Emails of the Users That You Want To Add, Separated By Comma </Typography>
                 <div>
                   <Input onChange = {this.updateCollabs}/>
-                  <Button variant = 'contained' onClick = {this.saveCollabs}> Add </Button>
+                  <Button variant = 'fab' color = "secondary" onClick = {this.saveCollabs}>
+                    <AddIcon/> </Button>
                 </div>
               </div>
             </Popover>
