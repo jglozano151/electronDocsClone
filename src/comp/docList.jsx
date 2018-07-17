@@ -16,7 +16,6 @@ export default class DocList extends React.Component {
       <div>
         LOGIN SUCCESS
         UserID: {this.props.userId}
-
         <button onClick={()=>this.newDoc()}>Create New Document</button>
       </div>
     )
