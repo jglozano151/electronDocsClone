@@ -95,6 +95,7 @@ app.post('/signup', function(req, res) {
   })
 });
 
+//MongoDB
 // app.post('/newDoc', function(req, res) {
 //   const newDoc = new Doc ({
 //     owner: req.body.userId,
@@ -155,53 +156,53 @@ app.post('/newDoc', function(req, res) {
   })
 })
 
-
-app.post('/addCollaborators', function(req, res) {
-  console.log('collab', req.body.collaborators)
-  let collabArr = req.body.collaborators  // add .trim to each if necessary
-  let collabIDs = [];
-  collabArr = collabArr.map((email) => {
-    return User.findOne({email: email.trim()}, function (err, user) {
-      if (err) {
-          console.log('err',err)
-          res.json({success:false})
-      }
-      else {
-        collabIDs.push(user._id);
-        let origDocs = user.docs.slice()
-        origDocs.push(req.body.docId)
-        return {id: user._id, docs: origDocs}
-      }
-    })
-  })
-
-  Promise.all(collabArr)
-  .then( (collabArr) => {
-    console.log(collabArr)
-    return Promise.all(collabArr.map( (obj) => {
-      console.log(obj)
-      let id = obj.id
-      let docs = obj.docs
-      return User.findByIdAndUpdate(id, {docs: docs}).exec()
-    }))
-  })
-  .then(() => {
-    Doc.findByIdAndUpdate(req.body.docId, {collaborators: collabIDs}, function(err2) {
-      if (err2) {
-        console.log('err2',err2)
-        res.json({success: false})
-      }
-      else {
-        res.json({success: true,
-          docId: req.body.docId});
-      }
-    })
-  })
-  .catch((err3) => {
-    console.log('err3',err3)
-    res.json({success:false})
-  })
-})
+// app.post('/addCollaborators', function(req, res) {
+//   console.log('collab', req.body.collaborators)
+//   let collabArr = req.body.collaborators  // add .trim to each if necessary
+//   let collabIDs = [];
+//   collabArr = collabArr.map((email) => {
+//     return User.findOne({email: email.trim()}, function (err, user) {
+//       if (err) {
+//           console.log('err',err)
+//           res.json({success:false})
+//       }
+//       else {
+//         collabIDs.push(user._id);
+//         let origDocs = user.docs.slice()
+//         origDocs.push(req.body.docId)
+//         console.log('asdfghj');
+//         return {id: user._id, docs: origDocs}
+//       }
+//     })
+//   })
+//
+//   Promise.all(collabArr)
+//   .then( (collabArr) => {
+//     console.log('collabArr',collabArr)
+//     return Promise.all(collabArr.map( (obj) => {
+//       console.log(obj)
+//       let id = obj.id
+//       let docs = obj.docs
+//       return User.findByIdAndUpdate(id, {docs: docs}).exec()
+//     }))
+//   })
+//   .then(() => {
+//     Doc.findByIdAndUpdate(req.body.docId, {collaborators: collabIDs}, function(err2) {
+//       if (err2) {
+//         console.log('err2',err2)
+//         res.json({success: false})
+//       }
+//       else {
+//         res.json({success: true,
+//           docId: req.body.docId});
+//       }
+//     })
+//   })
+//   .catch((err3) => {
+//     console.log('err3',err3)
+//     res.json({success:false})
+//   })
+// })
 
 app.post('/saveFile/:docId', function(req, res) {
   Doc.findByIdAndUpdate(req.params.docId, {text: req.body.text}, function(err, success) {
@@ -212,42 +213,67 @@ app.post('/saveFile/:docId', function(req, res) {
 
 app.post('/joinDoc', function(req, res) {
   let previousCollabs;
+  Doc.findById(req.body.docId, function(error, result) {
+    if (req.body.password === foundDoc.password) {  //identified that password is correct
+      let previousCollabs = foundDoc.collaborators.slice()
+      previousCollabs.push(req.body.userId)
 
-  Doc.findOneAndUpdate(
-    {_id: req.body.docId, password: req.body.password},
-    {
-      "$push": {
-        docs: {
-          "$each": [req.body.userId]
-        }
-      }
-    },
-    function(error, result) {
-      if (error) res.json({success: false})
-      else {
-        if (result === null) res.json({success: false})
-        //password is incorrect, or document does not exist
+      //update doc's collab Array
+     var promise1 = Doc.findByIdAndUpdate(req.body.docId, {collaborators: previousCollabs})
+
+      //update user's docs
+      var promise2 = User.findById(req.body.userId, function(error, result) {
+        if (error) res.json({success: false})
         else {
-          //result is updated doc
-          User.findByIdAndUpdate(req.body.userId,
-            {
-              "$push": {
-                docs: {
-                  "$each": [req.result._id]
-                }
-              }
-            },
-          function(error, result) {
-            if (error) res.json({success: false})
-            else {
-              res.json({success : result !== null})
-            }
-          }
-          )
+          User.findByIdAndUpdate(req.body.userId, {docs: result.docs})
         }
-      }
-    })
-  })
+      })
+
+      Promise.all([promise1, promise2])
+      .then(res.json({success: true}))
+
+    } else {
+      res.json({success: false})
+    }
+})
+
+// let previousCollabs;
+//
+// Doc.findOneAndUpdate(
+//   {_id: req.body.docId, password: req.body.password},
+//   {
+//     "$push": {
+//       docs: {
+//         "$each": [req.body.userId]
+//       }
+//     }
+//   },
+//   function(error, result) {
+//     if (error) res.json({success: false})
+//     else {
+//       if (result === null) res.json({success: false})
+//       //password is incorrect, or document does not exist
+//       else {
+//         //result is updated doc
+//         User.findByIdAndUpdate(req.body.userId,
+//           {
+//             "$push": {
+//               docs: {
+//                 "$each": [req.result._id]
+//               }
+//             }
+//           },
+//         function(error, result) {
+//           if (error) res.json({success: false})
+//           else {
+//             res.json({success : result !== null})
+//           }
+//         }
+//         )
+//       }
+//     }
+//   })
+// })
 
 // .then(foundDoc => {
 //

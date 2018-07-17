@@ -23,6 +23,7 @@ export default class Signup extends React.Component {
     .then(response => (response.json()))
     .then((res) => {
       if (res.success) { // navigate to homepage after successful registration
+        alert('Sign up successful')
         this.props.changePage('homepage', null, null)
       } else {
         alert('Failed to sign up')
