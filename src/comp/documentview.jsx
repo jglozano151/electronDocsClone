@@ -41,22 +41,29 @@ export default class DocumentView extends React.Component {
   }
   componentWillMount() {
     fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId)
+      .then(response => (response.json()))
       .then((doc) => {
-        let text = convertFromRaw(JSON.parse(doc.text))
-        let editorState = EditorState.createWithContent(text)
-        this.setState({
-          docName: doc.title,
-          editorState: editorState,
-          owner: doc.owner,
-        })
-        let collaborators = []
-        Promise.all(
-          doc.collaborators.map((collab) => {
-            fetch(this.props.url + '/users/' + collab)
-              .then((user) => collaborators.push(user))
+        console.log(doc)
+        this.setState({docName: doc.title, owner: doc.owner})
+        if (doc.text) {
+          let text = convertFromRaw(JSON.parse(doc.text))
+          let editorState = EditorState.createWithContent(text)
+          this.setState({
+            editorState: editorState
           })
-        )
-          .then(this.setState({collaborators: collaborators}))
+          let collaborators = []
+          Promise.all(
+            doc.collaborators.map((collab) => {
+              fetch(this.props.url + '/users/' + collab)
+                .then((user) => collaborators.push(user))
+            })
+          )
+            .then(this.setState({collaborators: collaborators}))
+        }
+      })
+      .catch(err=>{
+        alert('Failed to load document')
+        console.log(err)
       })
   }
   // Modal functions
@@ -72,14 +79,21 @@ export default class DocumentView extends React.Component {
   }
   saveCollabs = () => {
     console.log(this.state.newCollabs)
-    fetch(this.props.url + '/addCollaborator/' + this.props.docId, {
+    fetch(this.props.url + '/addCollaborators', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: {collaborators: this.state.newCollabs}
+      body: {
+        docId: this.props.docId,
+        collaborators: this.state.newCollabs
+      }
     })
       .then(this.setState({newCollabs: []}))
+      .catch(err=>{
+        alert('Failed to save')
+        console.log(err)
+      })
   }
   // Changing text style functions
   _onBoldClick(e) {
