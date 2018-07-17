@@ -2,7 +2,8 @@
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
-server.listen(8080);  // when push to heroku, this will be process.env.PORT
+const port = process.env.PORT || 3000
+server.listen(port);  // when push to heroku, this will be process.env.PORT
 // require something else for socket variable?//
 // which day/exercise did we do for sockets?
 // slapjack, week 5
@@ -94,7 +95,7 @@ io.on('connection', function (socket) {
           text: ''
         });
         newDoc.save(function(err, success) {
-          
+
         })
       }
     })

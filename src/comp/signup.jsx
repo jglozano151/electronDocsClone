@@ -6,6 +6,7 @@ export default class Signup extends React.Component {
     this.state = {}
   }
 
+  //Sign Up
   signup() {
     this.props.socket.emit('signup', this.state.email, this.state.password, this.state.name)
   }
@@ -14,9 +15,16 @@ export default class Signup extends React.Component {
     return (
       <div>
         <h2>Sign Up</h2>
-        <input placeholder="Name" value={this.state.name} onChange={(e) => this.setState(e.target.value)} />
-        <input placeholder="Email" value={this.state.email} onChange={(e) => this.setState(e.target.value)} />
-        <input type="password" placeholder="Password" value={this.state.password} onChange={(e) => this.setState(e.target.value)}/>
+        <input placeholder="Name"
+              value={this.state.name}
+              onChange={(e) => this.setState({name: e.target.value})} />
+        <input placeholder="Email"
+              value={this.state.email}
+              onChange={(e) => this.setState({email: e.target.value})} />
+        <input type="password"
+              placeholder="Password"
+              value={this.state.password}
+              onChange={(e) => this.setState({password:e.target.value})}/>
         <button onClick={() => this.signup()}>Sign Up</button>
         <button onClick={() => this.props.socket.emit('goToLogin')}>Login</button>
       </div>
