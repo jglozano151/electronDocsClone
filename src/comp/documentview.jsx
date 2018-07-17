@@ -12,11 +12,6 @@ import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToR
 
 // const socket = io.connect('http://')
 
-const dummyProps = {
-  title: 'Test doc',
-  text: 'Testing text 123'
-}
-
 export default class DocumentView extends React.Component {
   constructor(props) {
     super(props)
@@ -32,15 +27,23 @@ export default class DocumentView extends React.Component {
     }
     this.onChange = (editorState) => {
       this.setState({editorState})
+      let contentState = editorState.getCurrentContent()
       // io.emit('makeChange', {text: this.state.editorState})
     }
     // socket.on('makeChange', (data) => this.setState({editorState: data.text}))
   }
   componentWillMount() {
-    // let blockArray = convertFromRaw(dummyProps.text)
-    // let contentState = ContentState.createFromBlockArray(blockArray)
-    let editorState = EditorState.createWithContent(contentState)
-    // this.setState({editorState: editorState, docname: dummyProps.title})
+    fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId)
+      .then((doc) => {
+        let text = convertFromRaw(JSON.parse(doc.text))
+        let editorState = EditorState.createWithContent(text)
+        this.setState({
+          docName: doc.title,
+          editorState: editorState,
+          owner: doc.owner
+        })
+      })
+      .catch((err) => console.log({status: 400, message: err}))
   }
   _onBoldClick(e) {
     e.preventDefault()
@@ -62,7 +65,15 @@ export default class DocumentView extends React.Component {
   }
   saveFile(e) {
     e.preventDefault()
-    console.log(convertToRaw(this.state.editorState.getCurrentContent))
+    const contentState = editorState.getCurrentContent()
+    const saveData = JSON.stringify(convertToRaw(contentState))
+    fetch(this.props.url + '/savefile/' + this.props.docId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: {text: saveData}
+    })
   }
   // Font Color, Font Size, Left/center/right align paragraph, bullet/numbered lists
   render() {
