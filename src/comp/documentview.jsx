@@ -7,23 +7,28 @@ import Typography from '@material-ui/core/Typography';
 import Chip from '@material-ui/core/Chip';
 import Avatar from '@material-ui/core/Avatar';
 import AddIcon from '@material-ui/icons/Add';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+import Fade from '@material-ui/core/Fade';
+import Popover from '@material-ui/core/Popover';
 // import Button from 'semantic-ui-react';
 import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToRaw} from 'draft-js';
-
-// const socket = io.connect('http://')
 
 export default class DocumentView extends React.Component {
   constructor(props) {
     super(props)
+    // const socket = io.connect(this.props.url)
     this.state = {
       editorState: EditorState.createEmpty(),
       docName: 'Loading...',
+      collaborators: [],
       bold: false,
       italic: false,
       underline: false,
       leftAlign: true,
       centerAlign: false,
       rightAlign: false,
+      anchorEl: null
     }
     this.onChange = (editorState) => {
       this.setState({editorState})
@@ -40,11 +45,26 @@ export default class DocumentView extends React.Component {
         this.setState({
           docName: doc.title,
           editorState: editorState,
-          owner: doc.owner
+          owner: doc.owner,
         })
+        let collaborators = []
+        Promise.all(
+          doc.collaborators.map((collab) => {
+            fetch(this.props.url + '/users/' + collab)
+              .then((user) => collaborators.push(user))
+          })
+        )
+          .then(this.setState({collaborators: collaborators}))
       })
-      .catch((err) => console.log({status: 400, message: err}))
   }
+  // Modal functions
+  handleOpen = event => {
+    this.setState({anchorEl: event.currentTarget})
+  }
+  handleClose = () => {
+    this.setState({anchorEl: null})
+  }
+  // Changing text style functions
   _onBoldClick(e) {
     e.preventDefault()
     this.state.bold ?
@@ -65,7 +85,7 @@ export default class DocumentView extends React.Component {
   }
   saveFile(e) {
     e.preventDefault()
-    const contentState = editorState.getCurrentContent()
+    const contentState = this.state.editorState.getCurrentContent()
     const saveData = JSON.stringify(convertToRaw(contentState))
     fetch(this.props.url + '/savefile/' + this.props.docId, {
       method: 'POST',
@@ -75,8 +95,19 @@ export default class DocumentView extends React.Component {
       body: {text: saveData}
     })
   }
+  addCollaborator = (emails) => {
+    let collaborators = emails.split(',')
+    fetch(this.props.url + '/addCollaborator/' + this.props.docId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: {collaborators: collaborators}
+    })
+  }
   // Font Color, Font Size, Left/center/right align paragraph, bullet/numbered lists
   render() {
+    const { anchorEl } = this.state
     return (
       <div>
         <Card>
@@ -90,7 +121,17 @@ export default class DocumentView extends React.Component {
             <Chip style = {buttonStyle} avatar = {<Avatar> JL </Avatar>} label = 'Joe Lozano'/>
             <Chip style = {buttonStyle} avatar = {<Avatar> IC </Avatar>} label = 'Isabelle Chun'/>
             <Chip style = {buttonStyle} avatar = {<Avatar> YS </Avatar>} label = 'Yuna Shin'/>
-            <Button style = {buttonStyle} variant = "fab" mini color = "primary"><ion-icon name = "add"/></Button>
+            <Button onClick = {this.handleOpen}> Add Users </Button>
+            <Popover
+              open = {Boolean(anchorEl)}
+              anchorEl = {anchorEl}
+              onClose = {this.handleClose}
+              anchorOrigin = {{vertical: 'button', horizontal: 'center'}}
+              transformOrigin = {{vertical: 'top', horizontal: 'center'}}
+              style = {popoverStyle}
+            >
+              <Typography> Enter the Emails of the Users That You Want To Add, Separated By Comma </Typography>
+            </Popover>
             <Button style = {buttonStyle} variant = "contained" color = "primary"
               style = {buttonStyle} onMouseDown = {(e) => this.saveFile(e)}>
               Save
@@ -108,9 +149,6 @@ export default class DocumentView extends React.Component {
               </Button>
               <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.changeColor(e)}>
                 Color
-              </RaisedButton>
-              <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.changeFontSize(e)}>
-                Size
               </RaisedButton>
               <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.alignLeft(e)}>
                 <ion-icon name="list"/>
@@ -140,4 +178,8 @@ const editorStyle = {
 
 const buttonStyle = {
   margin: '10px'
+}
+
+const popoverStyle = {
+  padding: '20px 50px'
 }
