@@ -40,7 +40,12 @@ export default class DocumentView extends React.Component {
     // socket.on('makeChange', (data) => this.setState({editorState: data.text}))
   }
   componentWillMount() {
-    fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId)
+    fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId,{
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
       .then(response => (response.json()))
       .then((doc) => {
         console.log(doc)
@@ -84,12 +89,15 @@ export default class DocumentView extends React.Component {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: {
+      body: JSON.stringify({
         docId: this.props.docId,
         collaborators: this.state.newCollabs
-      }
+      })
     })
-      .then(this.setState({newCollabs: []}))
+      .then(() => {
+        alert(`Added ${this.state.newCollabs} as collaborators`)
+        this.setState({newCollabs: []})
+      })
       .catch(err=>{
         alert('Failed to save')
         console.log(err)
@@ -118,13 +126,21 @@ export default class DocumentView extends React.Component {
     e.preventDefault()
     const contentState = this.state.editorState.getCurrentContent()
     const saveData = JSON.stringify(convertToRaw(contentState))
+    console.log(saveData)
     fetch(this.props.url + '/savefile/' + this.props.docId, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: {text: saveData}
+      body: JSON.stringify({text: saveData})
     })
+    .then(response => (response.json()))
+    .then(res => {
+      if (res.success) {
+        alert('file saved!')
+      }
+    })
+    .catch(err=>console.log(err))
   }
   // Font Color, Font Size, Left/center/right align paragraph, bullet/numbered lists
   render() {
