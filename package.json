@@ -68,6 +68,7 @@
     "ionicons": "^4.2.4",
     "material-ui": "^0.20.1",
     "material-ui-icons": "^1.0.0-beta.36",
+    "mongodb": "^3.1.1",
     "mongoose": "^5.2.3",
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
