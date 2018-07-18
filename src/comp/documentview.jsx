@@ -18,7 +18,7 @@ import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToR
 
 // SOCKET
 const io = require('socket.io-client')
-const socket = io.connect()
+const socket = io.connect('http://5953b3c6.ngrok.io')
 
 export default class DocumentView extends React.Component {
   constructor(props) {
@@ -38,7 +38,6 @@ export default class DocumentView extends React.Component {
       newCollabs: [],
     }
     this.onChange = (editorState) => {
-      this.setState({editorState})
       socket.emit('makeChange', {text: this.state.editorState})
     }
   }
@@ -74,7 +73,9 @@ export default class DocumentView extends React.Component {
       })
   }
   componentDidMount() {
-    socket.on('recieveChange', (data) => this.setState({editorState: data.text}))
+    socket.on('recieveChange', (data) => {
+      this.setState({editorState: data.text})
+    })
   }
   viewList(userId) {
     this.props.changePage('docList', userId, null)
