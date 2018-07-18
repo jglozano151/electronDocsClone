@@ -124,7 +124,6 @@ app.post('/joinDoc', function(req, res) {
     } else {  //identified that password is correct
       previousCollabs = foundDoc.collaborators.slice();
       previousCollabs.push(req.body.userId)
-      console.log('collab', previousCollabs);
       Doc.findByIdAndUpdate(req.body.docId, {collaborators: previousCollabs}, function(err2,result) {
         if (err2) {
           console.log(error)
@@ -133,7 +132,6 @@ app.post('/joinDoc', function(req, res) {
           User.findById(req.body.userId, function(err3, result3) {
             previousDocs = result3.docs.slice()
             previousDocs.push(req.body.docId)
-            console.log('doc', previousDocs)
             User.findByIdAndUpdate(req.body.userId, {docs:previousDocs}, function(err4,result4) {
               if (err4) {
                 console.log(error)
@@ -176,8 +174,9 @@ app.get('/documentview/:userId/:docId', function(req, res) {
 
 io.on('connection', function (socket) {
   socket.on('makeChange', function(data) {
-    socket.broadcast.emit('receiveChange', {text:data.text))
+    console.log('makechange', data)
+    io.emit('receiveChange', {text:data.text})
   })
-}
+})
 
 server.listen(port)
