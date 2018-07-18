@@ -18,7 +18,6 @@ import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToR
 
 // SOCKET
 const io = require('socket.io-client')
-const socket = io.connect('http://5953b3c6.ngrok.io')
 
 export default class DocumentView extends React.Component {
   constructor(props) {
@@ -36,12 +35,20 @@ export default class DocumentView extends React.Component {
       rightAlign: false,
       anchorEl: null,
       newCollabs: [],
+      socket: io.connect(this.props.url)
     }
     this.onChange = (editorState) => {
-      socket.emit('makeChange', {text: this.state.editorState})
+      const contentState = editorState.getCurrentContent()
+      this.state.socket.emit('makeChange', {text: JSON.stringify(convertToRaw(contentState))})
     }
   }
-  componentWillMount() {
+  componentDidMount() {
+    this.state.socket.on('receiveChange', (data) => {
+      let newtext = convertFromRaw(JSON.parse(data.text))
+      let editorState = EditorState.createWithContent(newtext)
+      this.setState({editorState})
+    })
+
     fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, {
         method: 'GET',
         headers: {
@@ -72,11 +79,7 @@ export default class DocumentView extends React.Component {
         alert('Failed to load document')
       })
   }
-  componentDidMount() {
-    socket.on('recieveChange', (data) => {
-      this.setState({editorState: data.text})
-    })
-  }
+
   viewList(userId) {
     this.props.changePage('docList', userId, null)
   }
