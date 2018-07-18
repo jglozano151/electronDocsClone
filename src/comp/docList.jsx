@@ -108,12 +108,13 @@ export default class DocList extends React.Component {
     .then(response => (response.json()))
     .then((res) => {
       if (res.success) {
+        let docId = this.state.collabDocID
         this.setState({
           collabDocID:'',
           collabDocPassword:'',
           collabModalIsOpen: false
         })
-        this.props.changePage('documentview', this.props.userId, this.state.collabDocID) //Navigate to specified document
+        this.props.changePage('documentview', this.props.userId, docId) //Navigate to specified document
       } else {
         alert('Failed to join document')
       }
