@@ -16,6 +16,10 @@ import Input from '@material-ui/core/Input';
 // import Button from 'semantic-ui-react';
 import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToRaw} from 'draft-js';
 
+// SOCKET
+const io = require('socket.io-client')
+const socket = io.connect()
+
 export default class DocumentView extends React.Component {
   constructor(props) {
     super(props)
@@ -35,13 +39,11 @@ export default class DocumentView extends React.Component {
     }
     this.onChange = (editorState) => {
       this.setState({editorState})
-      let contentState = editorState.getCurrentContent()
-      // io.emit('makeChange', {text: this.state.editorState})
+      socket.emit('makeChange', {text: this.state.editorState})
     }
-    // socket.on('makeChange', (data) => this.setState({editorState: data.text}))
   }
   componentWillMount() {
-    fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId,{
+    fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -70,6 +72,9 @@ export default class DocumentView extends React.Component {
       .catch((err) => {
         alert('Failed to load document')
       })
+  }
+  componentDidMount() {
+    socket.on('recieveChange', (data) => this.setState({editorState: data.text}))
   }
   viewList(userId) {
     this.props.changePage('docList', userId, null)
