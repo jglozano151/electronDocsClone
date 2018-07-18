@@ -79,7 +79,8 @@
     "react-modal": "^3.5.1",
     "react-semantic-ui": "^0.2.0",
     "semantic-ui-react": "^0.82.0",
-    "socket.io": "^2.1.1"
+    "socket.io": "^2.1.1",
+    "socket.io-client": "^2.1.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
