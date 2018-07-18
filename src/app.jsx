@@ -1,7 +1,7 @@
 //ROUTES
 import React from 'react';
 
-const url="http://d3dfb405.ngrok.io"
+const url="http://5953b3c6.ngrok.io"
 
 const Homepage = require('./comp/homepage').default
 const Signup = require('./comp/signup').default
