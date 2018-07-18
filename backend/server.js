@@ -59,13 +59,24 @@ function(req, res) {
   res.json({success: true, userId: req.user.id}); // `req.user` contains the authenticated user.
 })
 
+//user colors
+var colors = ['LightBlue','LightGray','LightGreen','LightPink','LightSalmon','MediumBlue',
+              'MidnightBlue','Olive','Orange','OrangeRed','Pink','Purple','Red','Sienna']
+function getRandomIntInclusive() {
+  let min = Math.ceil(0);
+  let max = Math.floor(colors.length-1);
+  return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
+}
+
 // server side, saving a user
 app.post('/signup', function(req, res) {
+  let ind = getRandomIntInclusive()
   const newUser = new User({
     email: req.body.email,
     password: req.body.password,
     name: req.body.name,
-    docs: []
+    docs: [],
+    color: colors[ind]
   });
   newUser.save(function(error, user) {
     if (error) {
@@ -84,7 +95,7 @@ app.post('/newDoc', function(req, res) {
     title: req.body.title,
     password: req.body.password,
     collaborators: [req.body.userId],
-    text: {}
+    revision:[]
   });
 
   newDoc.save(function(err, success) {    /* REWRITE: .then()s instead of if/elses */
@@ -95,7 +106,7 @@ app.post('/newDoc', function(req, res) {
         if (error) {res.json({success: false})}
         else {
           userDocs = user.docs.slice();
-          userDocs = userDocs.push(success._id);  //success._id is id of doc that was just saved
+          userDocs.push(success._id);  //success._id is id of doc that was just saved
 
           User.findByIdAndUpdate(req.body.userId, {docs: userDocs}, function(error2, result2) {
             if (error2) {res.json({success: false})}
@@ -108,9 +119,21 @@ app.post('/newDoc', function(req, res) {
 })
 
 app.post('/saveFile/:docId', function(req, res) {
-  Doc.findByIdAndUpdate(req.params.docId, {text: req.body.text}, function(err, success) {
-    if (err) res.status(404)
-    else res.json({success: true})
+  let revisionHistory;
+  User.findById(req.body.userId, (err, author) => {
+    Doc.findById(req.params.docId)
+    .then((foundDoc) => {
+      revisionHistory = foundDoc.revision.slice()
+      revisionHistory.push({
+        time: new Date(),
+        text: req.body.text,
+        author: author.name
+      })
+      Doc.findByIdAndUpdate(req.params.docId, {revision: revisionHistory}, function(err, success) {
+        if (err) res.status(404)
+        else res.json({success: true})
+      })
+    })
   })
 })
 
@@ -126,7 +149,7 @@ app.post('/joinDoc', function(req, res) {
       previousCollabs.push(req.body.userId)
       Doc.findByIdAndUpdate(req.body.docId, {collaborators: previousCollabs}, function(err2,result) {
         if (err2) {
-          console.log(error)
+          console.log(err2)
           res.json({success:false})
         } else {
           User.findById(req.body.userId, function(err3, result3) {
@@ -134,7 +157,7 @@ app.post('/joinDoc', function(req, res) {
             previousDocs.push(req.body.docId)
             User.findByIdAndUpdate(req.body.userId, {docs:previousDocs}, function(err4,result4) {
               if (err4) {
-                console.log(error)
+                console.log(err4)
                 res.json({success:false})
               } else {
                 res.json({success:true})
@@ -172,11 +195,32 @@ app.get('/documentview/:userId/:docId', function(req, res) {
   })
 })
 
+app.get('/users/:userId', function(req, res) {
+  User.findById(req.params.userId, function(error, result) {
+    if (error) res.status(404).json({success: false})
+    else {
+      res.json(result) // result is a user object. keys: owner, title, password, collaborators, text
+      // client must json parse to access result
+    }
+  })
+})
+
 io.on('connection', function (socket) {
   socket.on('makeChange', function(data) {
     console.log('makechange', data)
-    io.emit('receiveChange', {text:data.text})
+    socket.to(socket.room).emit('receiveChange', {text:data.text})
   })
+
+  socket.on('room', (roomDocId) => {
+    if (socket.room) {
+      socket.leave(socket.room);
+    }
+    else {
+      socket.room = roomDocId
+      socket.join(roomDocId)
+    }
+  })
+
 })
 
 server.listen(port)

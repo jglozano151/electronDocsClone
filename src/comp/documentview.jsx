@@ -34,17 +34,32 @@ export default class DocumentView extends React.Component {
       centerAlign: false,
       rightAlign: false,
       anchorEl: null,
+      anchorEl2: null,
       newCollabs: [],
-      socket: io.connect(this.props.url)
+      myChange: false,
+      socket: io.connect(this.props.url),
+      history: []
     }
     this.onChange = (editorState) => {
-      console.log(Array.isArray(editorState))
       const contentState = editorState.getCurrentContent()
+
+      var selectionState = editorState.getSelection()
+      var cursor = {
+        collapsed: selectionState.isCollapsed(),
+        anchorKey: selectionState.getAnchorKey(),
+        anchorOffset: selectionState.getAnchorOffset(),
+        focusKey: selectionState.getFocusKey(),
+        focusOffset: selectionState.getFocusOffset(),
+      }
+      this.setState({editorState})
       this.state.socket.emit('makeChange', {text: JSON.stringify(convertToRaw(contentState))})
     }
   }
   componentDidMount() {
+    this.state.socket.emit('room', this.props.docId);
+
     this.state.socket.on('receiveChange', (data) => {
+      console.log('Receiving from server: ', data.text)
       let newtext = convertFromRaw(JSON.parse(data.text))
       let editorState = EditorState.createWithContent(newtext)
       this.setState({editorState})
@@ -58,29 +73,37 @@ export default class DocumentView extends React.Component {
       })
       .then(response => (response.json()))
       .then((doc) => {
-        console.log(doc)
-        this.setState({docName: doc.title, owner: doc.owner})
-        if (doc.text) {
-          let text = convertFromRaw(JSON.parse(doc.text))
+        this.setState({docName: doc.title, owner: doc.owner, history: doc.revision})
+        if (doc.revision) {
+          let text = convertFromRaw(JSON.parse(doc.revision[doc.revision.length-1].text))
           let editorState = EditorState.createWithContent(text)
           this.setState({
             editorState: editorState
           })
-          let collaborators = []
-          Promise.all(
-            doc.collaborators.map((collab) => {
-              fetch(this.props.url + '/users/' + collab)
-                .then((user) => collaborators.push(user))
-            })
-          )
-            .then(this.setState({collaborators: collaborators}))
         }
+        let collaborators = []
+        console.log(doc.collaborators)
+        Promise.all(
+          doc.collaborators.map((collab) => {
+            fetch(this.props.url + '/users/' + collab, {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            })
+              .then(response => response.json())
+              .then((user) => {
+                collaborators.push(user.name)
+                console.log(collaborators)
+              })
+          })
+          .then(this.setState({collaborators}))
+        )
       })
       .catch((err) => {
         alert('Failed to load document')
+        console.log(err)
       })
   }
-
   viewList(userId) {
     this.props.changePage('docList', userId, null)
   }
@@ -90,6 +113,12 @@ export default class DocumentView extends React.Component {
   }
   handleClose = () => {
     this.setState({anchorEl: null, newCollabs: []})
+  }
+  handleOpen2 = event => {
+    this.setState({anchorEl2: event.currentTarget})
+  }
+  handleClose2 = () => {
+    this.setState({anchorEl2: null})
   }
   updateCollabs = (e) => {
     let collaborators = e.target.value.split(',')
@@ -122,6 +151,7 @@ export default class DocumentView extends React.Component {
     this.state.bold ?
       this.setState({bold: false}) : this.setState({bold: true})
     this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, 'BOLD'))
+    console.log(this.state.collaborators)
   }
   _onItalicClick(e) {
     e.preventDefault()
@@ -139,13 +169,12 @@ export default class DocumentView extends React.Component {
     e.preventDefault()
     const contentState = this.state.editorState.getCurrentContent()
     const saveData = JSON.stringify(convertToRaw(contentState))
-    console.log(saveData)
     fetch(this.props.url + '/savefile/' + this.props.docId, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({text: saveData})
+      body: JSON.stringify({userId: this.props.userId, text: saveData})
     })
     .then(response => (response.json()))
     .then(res => {
@@ -171,26 +200,9 @@ export default class DocumentView extends React.Component {
         <Card style = {buttonStyle}>
           <CardContent>
             <Typography style = {buttonStyle}> <ion-icon name = "create"/> Editing '{this.state.docName}' </Typography>
-            <Chip style = {buttonStyle} avatar = {<Avatar> JL </Avatar>} label = 'Joe Lozano'/>
-            <Chip style = {buttonStyle} avatar = {<Avatar> IC </Avatar>} label = 'Isabelle Chun'/>
-            <Chip style = {buttonStyle} avatar = {<Avatar> YS </Avatar>} label = 'Yuna Shin'/>
-            <Button variant = "fab" color = "primary" onClick = {this.handleOpen}> <AddIcon/> </Button>
-            <Popover
-              open = {Boolean(anchorEl)}
-              anchorEl = {anchorEl}
-              onClose = {this.handleClose}
-              anchorOrigin = {{vertical: 'button', horizontal: 'center'}}
-              transformOrigin = {{vertical: 'top', horizontal: 'center'}}
-            >
-              <div style = {popoverStyle}>
-                <Typography style = {popoverStyle}> Enter the Emails of the Users That You Want To Add, Separated By Comma </Typography>
-                <div>
-                  <Input onChange = {this.updateCollabs}/>
-                  <Button variant = 'fab' color = "secondary" onClick = {this.saveCollabs}>
-                    <AddIcon/> </Button>
-                </div>
-              </div>
-            </Popover>
+            {this.state.collaborators.map((collaborator) => (
+              <Chip style = {buttonStyle} avatar = {<Avatar>{collaborator[0]}</Avatar>} label = {collaborator}/>
+            ))}
             <Button style = {buttonStyle} variant = "contained" color = "primary"
               style = {buttonStyle} onMouseDown = {(e) => this.saveFile(e)}>
               Save
@@ -218,6 +230,26 @@ export default class DocumentView extends React.Component {
               <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.alignRight(e)}>
                 <ion-icon name = "remove"/>
               </RaisedButton>
+              <Button variant = "contained" color = "primary" onClick = {this.handleOpen}> History </Button>
+              <Popover
+                open = {Boolean(anchorEl)}
+                anchorEl = {anchorEl}
+                onClose = {this.handleClose}
+                anchorOrigin = {{vertical: 'button', horizontal: 'center'}}
+                transformOrigin = {{vertical: 'top', horizontal: 'center'}}
+              >
+                <div style = {popoverStyle}>
+                  <Typography style = {popoverStyle}> This Document's History </Typography>
+                  {this.state.history.map((history) => (
+                    <Card>
+                      <CardContent>
+                        <Typography variant = "subheading"> {history.author} </Typography>
+                        <Typography variant = "subheading"> {history.time} </Typography>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </Popover>
             </div>
           </CardContent>
         </Card>

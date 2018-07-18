@@ -24,6 +24,9 @@ var userSchema = new mongoose.Schema({
   },
   docs: {
     type: Array
+  },
+  color: {
+    type: String
   }
 });
 
@@ -44,9 +47,9 @@ var docSchema = new mongoose.Schema({
     type: Array,
     required: true
   },
-  text: {
-    type: Object
-    }
+  revision: {
+    type: Array
+  }
 });
 
 

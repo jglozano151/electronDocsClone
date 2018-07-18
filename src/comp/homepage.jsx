@@ -59,7 +59,7 @@ export default class Homepage extends React.Component {
               </FormControl>
               <FormControl style={buttonStyle}>
                 <InputLabel htmlFor="name-simple">Password</InputLabel>
-                <Input onChange={(e) => this.setState({password:e.target.value})} />
+                <Input type="password" onChange={(e) => this.setState({password:e.target.value})} />
               </FormControl>
               <div style = {{display: 'flex', justifyContent: 'center'}}>
                 <Button style={buttonStyle} onMouseDown={() => this.login()}  variant = "contained">Login</Button>
