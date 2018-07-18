@@ -144,7 +144,7 @@ app.post('/newDoc', function(req, res) {
         if (error) {res.json({success: false})}
         else {
           userDocs = user.docs.slice();
-          userDocs = userDocs.concat([success._id]);  //success._id is id of doc that was just saved
+          userDocs = userDocs.push(success._id);  //success._id is id of doc that was just saved
 
           User.findByIdAndUpdate(req.body.userId, {docs: userDocs}, function(error2, result2) {
             if (error2) {res.json({success: false})}
@@ -214,28 +214,65 @@ app.post('/saveFile/:docId', function(req, res) {
 app.post('/joinDoc', function(req, res) {
   let previousCollabs;
   let previousDocs;
-  Doc.findById(req.body.docId)
-  .then((foundDoc) => {
-    if (req.body.password === foundDoc.password) {  //identified that password is correct
-      previousCollabs = foundDoc.collaborators.slice();
-      previousCollabs.concat([req.body.userId])
-      Doc.findByIdAndUpdate(req.body.docId, {collaborators: previousCollabs})
-    } else {
+  Doc.findOne({_id:req.body.docId,password:req.body.password}, function(error, foundDoc) {
+    if (error) {
+      console.log(error)
       res.json({success:false})
+    } else {  //identified that password is correct
+      previousCollabs = foundDoc.collaborators.slice();
+      previousCollabs.push(req.body.userId)
+      console.log('collab', previousCollabs);
+      Doc.findByIdAndUpdate(req.body.docId, {collaborators: previousCollabs}, function(err2,result) {
+        if (err2) {
+          console.log(error)
+          res.json({success:false})
+        } else {
+          User.findById(req.body.userId, function(err3, result3) {
+            previousDocs = result3.docs.slice()
+            previousDocs.push(req.body.docId)
+            console.log('doc', previousDocs)
+            User.findByIdAndUpdate(req.body.userId, {docs:previousDocs}, function(err4,result4) {
+              if (err4) {
+                console.log(error)
+                res.json({success:false})
+              } else {
+                res.json({success:true})
+              }
+            })
+          })
+        }
+      })
     }
   })
-  .then(() => User.findById(req.body.userId))
-  .then((result) => {
-    previousDocs = result.docs.slice()
-    previousDocs.concat([req.body.docId])
-    User.findByIdAndUpdate(req.body.userId, {docs:previousDocs})
-  })
-  .then(()=> {res.json({success:true})})
-  .catch((err) => {
-    console.log(err)
-    res.json({success:false})
-  })
 })
+
+// app.post('/joinDoc', function(req, res) {
+//   let previousCollabs;
+//   let previousDocs;
+//   Doc.findById(req.body.docId)
+//   .then((foundDoc) => {
+//     if (req.body.password === foundDoc.password) {  //identified that password is correct
+//       previousCollabs = foundDoc.collaborators.slice();
+//       previousCollabs.push(req.body.userId)
+//       console.log('collab', previousCollabs);
+//       Doc.findByIdAndUpdate(req.body.docId, {collaborators: previousCollabs})
+//     } else {
+//       res.json({success:false})
+//     }
+//   })
+//   .then(() => User.findById(req.body.userId))
+//   .then((result) => {
+//     previousDocs = result.docs.slice()
+//     previousDocs.push(req.body.docId)
+//     console.log('doc', previousDocs)
+//     User.findByIdAndUpdate(req.body.userId, {docs:previousDocs})
+//   })
+//   .then(()=> {res.json({success:true})})
+//   .catch((err) => {
+//     console.log(err)
+//     res.json({success:false})
+//   })
+// })
 
 // app.post('/joinDoc', function(req, res) {
 //   Doc.findById(req.body.docId, function(error, foundDoc) {
