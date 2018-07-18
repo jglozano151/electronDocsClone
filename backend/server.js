@@ -213,29 +213,59 @@ app.post('/saveFile/:docId', function(req, res) {
 
 app.post('/joinDoc', function(req, res) {
   let previousCollabs;
-  Doc.findById(req.body.docId, function(error, result) {
+  let previousDocs;
+  Doc.findById(req.body.docId)
+  .then((foundDoc) => {
     if (req.body.password === foundDoc.password) {  //identified that password is correct
-      let previousCollabs = foundDoc.collaborators.slice()
-      previousCollabs.push(req.body.userId)
-
-      //update doc's collab Array
-     var promise1 = Doc.findByIdAndUpdate(req.body.docId, {collaborators: previousCollabs})
-
-      //update user's docs
-      var promise2 = User.findById(req.body.userId, function(error, result) {
-        if (error) res.json({success: false})
-        else {
-          User.findByIdAndUpdate(req.body.userId, {docs: result.docs})
-        }
-      })
-
-      Promise.all([promise1, promise2])
-      .then(res.json({success: true}))
-
+      previousCollabs = foundDoc.collaborators.slice();
+      previousCollabs.concat([req.body.userId])
+      Doc.findByIdAndUpdate(req.body.docId, {collaborators: previousCollabs})
     } else {
-      res.json({success: false})
+      res.json({success:false})
     }
+  })
+  .then(() => User.findById(req.body.userId))
+  .then((result) => {
+    previousDocs = result.docs.slice()
+    previousDocs.concat([req.body.docId])
+    User.findByIdAndUpdate(req.body.userId, {docs:previousDocs})
+  })
+  .then(()=> {res.json({success:true})})
+  .catch((err) => {
+    console.log(err)
+    res.json({success:false})
+  })
 })
+
+// app.post('/joinDoc', function(req, res) {
+//   Doc.findById(req.body.docId, function(error, foundDoc) {
+//     if (req.body.password === foundDoc.password) {  //identified that password is correct
+//       let previousCollabs = foundDoc.collaborators.slice();
+//       previousCollabs.concat([req.body.userId])
+//
+//       //update doc's collab Array
+//       var promise1 = Doc.findByIdAndUpdate(req.body.docId, {collaborators: previousCollabs})
+//
+//       //update user's docs
+//       var promise2 = User.findById(req.body.userId, function(error2, result2) {
+//         if (error2) res.json({success: false})
+//         else {
+//           let previousDocs = result2.docs.slice();
+//           previousDocs.concat([req.body.docId])
+//           User.findByIdAndUpdate(req.body.userId, {docs: previousDocs})
+//         }
+//       })
+//
+//       Promise.all([promise1, promise2])
+//       .then(() => res.json({success: true}))
+//       .catch(err => console.log(err))
+//
+//     } else {
+//       res.json({success: false})
+//     }
+//   })
+//
+// })
 
 // let previousCollabs;
 //

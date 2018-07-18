@@ -66,9 +66,8 @@ export default class DocumentView extends React.Component {
             .then(this.setState({collaborators: collaborators}))
         }
       })
-      .catch(err=>{
+      .catch((err) => {
         alert('Failed to load document')
-        console.log(err)
       })
   }
   viewList(userId) {
