@@ -38,7 +38,6 @@ export default class DocumentView extends React.Component {
       socket: io.connect(this.props.url)
     }
     this.onChange = (editorState) => {
-      console.log(Array.isArray(editorState))
       const contentState = editorState.getCurrentContent()
       this.state.socket.emit('makeChange', {text: JSON.stringify(convertToRaw(contentState))})
     }
