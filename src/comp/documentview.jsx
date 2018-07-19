@@ -14,7 +14,7 @@ import Popover from '@material-ui/core/Popover';
 import Input from '@material-ui/core/Input';
 
 // import Button from 'semantic-ui-react';
-import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToRaw} from 'draft-js';
+import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToRaw, Modifier} from 'draft-js';
 
 // SOCKET
 const io = require('socket.io-client')
@@ -41,20 +41,32 @@ export default class DocumentView extends React.Component {
       history: []
     }
     this.onChange = (editorState) => {
+      // var selectionState = editorState.getSelection()
+      // var collapsed = selectionState.isCollapsed()
+      // if (!collapsed) {
+      //   editorState = Modifier.applyInlineStyle(editorState,selectionState,'HIGHLIGHT')
+      // }
+
+
+      // if (collapsed) {
+      //   //render cursor
+      // } else {
+      //   editorState = Modifier.applyInlineStyle(editorState,selectionState,'HIGHLIGHT')
+      // }
+      // var selectionState = editorState.getSelection()
+      // var collapsed = selectionState.isCollapsed()
+      // var anchorKey = selectionState.getAnchorKey()
+      // var anchorOffset = selectionState.getAnchorOffset()
+      // var focusKey = selectionState.getFocusKey()
+      // var focusOffset= selectionState.getFocusOffset()
+
       const contentState = editorState.getCurrentContent()
 
-      var selectionState = editorState.getSelection()
-      var cursor = {
-        collapsed: selectionState.isCollapsed(),
-        anchorKey: selectionState.getAnchorKey(),
-        anchorOffset: selectionState.getAnchorOffset(),
-        focusKey: selectionState.getFocusKey(),
-        focusOffset: selectionState.getFocusOffset(),
-      }
       this.setState({editorState})
       this.state.socket.emit('makeChange', {text: JSON.stringify(convertToRaw(contentState))})
     }
   }
+
   componentDidMount() {
     this.state.socket.emit('room', this.props.docId);
 
@@ -184,6 +196,14 @@ export default class DocumentView extends React.Component {
     })
     .catch(err=>console.log(err))
   }
+  searchTerm = (term) => {
+    console.log(term.target.value)
+  }
+  revertDoc = (text) => {
+    let newtext = convertFromRaw(JSON.parse(text))
+    let editorState = EditorState.createWithContent(newtext)
+    this.setState({editorState})
+  }
   // Font Color, Font Size, Left/center/right align paragraph, bullet/numbered lists
   render() {
     const { anchorEl } = this.state
@@ -245,17 +265,22 @@ export default class DocumentView extends React.Component {
                       <CardContent>
                         <Typography variant = "subheading"> {history.author} </Typography>
                         <Typography variant = "subheading"> {history.time} </Typography>
+                        <Button style = {buttonStyle} variant = "contained"
+                          onMouseDown = {() => this.revertDoc(history.text)}>
+                          Revert </Button>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
               </Popover>
             </div>
+            <ion-icon name = "search" style = {{marginLeft: '20px'}}/> <Input onChange={(term) => this.searchTerm(term)} />
           </CardContent>
         </Card>
         <Card style = {editorStyle}>
-          <Editor style = {editorStyle} editorState = {this.state.editorState} onChange = {this.onChange}/>
+          <Editor style = {editorStyle} editorState = {this.state.editorState} onChange = {this.onChange.bind(this)}/>
         </Card>
+
       </div>
     )
   }
@@ -264,7 +289,10 @@ export default class DocumentView extends React.Component {
 const editorStyle = {
   margin: '20px',
   minHeight: '350px',
-  padding: '20px'
+  padding: '20px',
+  'HIGHLIGHT': {
+    backgroundColor: 'lightgreen'
+  }
 }
 
 const buttonStyle = {

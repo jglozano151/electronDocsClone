@@ -205,7 +205,12 @@ app.get('/users/:userId', function(req, res) {
   })
 })
 
+
+
 io.on('connection', function (socket) {
+  let colorArr = ['LightBlue','LightGray','LightGreen','LightPink','LightSalmon','MediumBlue',
+                'MidnightBlue','Olive','Orange','OrangeRed','Pink','Purple','Red','Sienna']
+
   socket.on('makeChange', function(data) {
     console.log('makechange', data)
     socket.to(socket.room).emit('receiveChange', {text:data.text})
@@ -214,8 +219,11 @@ io.on('connection', function (socket) {
   socket.on('room', (roomDocId) => {
     if (socket.room) {
       socket.leave(socket.room);
+      colorArr.unshift(socket.color); //reset colorArr
+      socket.color = null;
     }
     else {
+      socket.color = colorArr.shift(); //assign user first color
       socket.room = roomDocId
       socket.join(roomDocId)
     }
