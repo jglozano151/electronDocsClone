@@ -95,7 +95,13 @@ app.post('/newDoc', function(req, res) {
     title: req.body.title,
     password: req.body.password,
     collaborators: [req.body.userId],
-    revision:[]
+    revision:[],
+    viewer1: '',
+    viewer2: '',
+    viewer3: '',
+    viewer4: '',
+    viewer5: '',
+    viewer6: ''
   });
 
   newDoc.save(function(err, success) {    /* REWRITE: .then()s instead of if/elses */
@@ -209,7 +215,7 @@ app.get('/users/:userId', function(req, res) {
 
 io.on('connection', function (socket) {
   let colorArr = ['LightBlue','LightGray','LightGreen','LightPink','LightSalmon','MediumBlue',
-                'MidnightBlue','Olive','Orange','OrangeRed','Pink','Purple','Red','Sienna']
+  'MidnightBlue','Olive','Orange','OrangeRed','Pink','Purple','Red','Sienna']
 
   socket.on('makeChange', function(data) {
     console.log('makechange', data)
@@ -217,21 +223,90 @@ io.on('connection', function (socket) {
     socket.to(socket.room).emit('receiveChange', {text:data.text, selection:data.selection, color:data.color})
   })
 
-  socket.on('room', (roomDocId) => {
-    if (socket.room) {
-      socket.leave(socket.room);
-      colorArr.unshift(roomDocId); //reset colorArr
-      //socket.color = null;
-    }
-    else {
-      let c = colorArr.shift(); //assign user first color
-      socket.emit('colorAssign', {color: c})
-      socket.room = roomDocId
-      socket.join(roomDocId)
-      //assign color
-      
+  socket.on('leaveRoom', (obj) => {
+    const viewerNum = obj.viewer;
+    const docId = obj.docId;
+    switch(viewerNum) {
+      case 1:
+      Doc.findByIdAndUpdate(docId, {viewer1: ''}, function(err, updated) {return});
+      break;
+      case 2:
+      Doc.findByIdAndUpdate(docId, {viewer2: ''}, function(err, updated) {return});
+      break;
+      case 3:
+      Doc.findByIdAndUpdate(docId, {viewer3: ''}, function(err, updated) {return});
+      break;
+      case 4:
+      Doc.findByIdAndUpdate(docId, {viewer4: ''}, function(err, updated) {return});
+      break;
+      case 5:
+      Doc.findByIdAndUpdate(docId, {viewer5: ''}, function(err, updated) {return});
+      break;
+      case 6:
+      Doc.findByIdAndUpdate(docId, {viewer6: ''}, function(err, updated) {return});
     }
   })
+
+  //called when a user opens documentview
+  socket.on('room', (obj) => {
+    const roomDocId = obj.docId
+    const userId = obj.userId
+    socket.room = roomDocId
+    socket.join(roomDocId)
+    Doc.findById(roomDocId, function(error, foundDoc) {
+      if (error) console.log('could not join room of doc', roomDocId)
+      else {
+        if (!foundDoc.viewer1) { // set foundDoc.viewer1 = true    ...{id: use} ?
+        Doc.findByIdAndUpdate(roomDocId, {viewer1: userId}, function(err, foundDoc2) {
+          if (err) console.log('could not join room of doc', roomDocId)
+          else socket.emit('colorAssign', {color: 'LightBlue', viewer: 1})
+        })
+      } else if (!foundDoc.viewer2) {
+        Doc.findByIdAndUpdate(roomDocId, {viewer2: userId}, function(err, foundDoc2) {
+          if (err) console.log('could not join room of doc', roomDocId)
+          else socket.emit('colorAssign', {color: 'LightGreen', viewer: 2})
+        })
+      } else if (!foundDoc.viewer3) {
+        Doc.findByIdAndUpdate(roomDocId, {viewer3: userId}, function(err, foundDoc2) {
+          if (err) console.log('could not join room of doc', roomDocId)
+          else socket.emit('colorAssign', {color: 'Red', viewer: 3})
+        })
+      } else if (!foundDoc.viewer4) {
+        Doc.findByIdAndUpdate(roomDocId, {viewer4: true}, function(err, foundDoc2) {
+          if (err) console.log('could not join room of doc', roomDocId)
+          else socket.emit('colorAssign', {color: 'LightPink', viewer: 4})
+        })
+      } else if (!foundDoc.viewer5) {
+        Doc.findByIdAndUpdate(roomDocId, {viewer5: true}, function(err, foundDoc2) {
+          if (err) console.log('could not join room of doc', roomDocId)
+          else socket.emit('colorAssign', {color: 'Orange', viewer: 5})
+        })
+      } else if (!foundDoc.viewer6) {
+        Doc.findByIdAndUpdate(roomDocId, {viewer6: true}, function(err, foundDoc2) {
+          if (err) console.log('could not join room of doc', roomDocId)
+          else socket.emit('colorAssign', {color: 'Purple', viewer: 6})
+        })
+      }
+    }
+  })
+})
+
+  // socket.on('makeChange', function(data) {
+  //   console.log('makechange', data)
+  //   console.log('color', data.color)
+  //   socket.to(socket.room).emit('receiveChange', {text:data.text, selection:data.selection, color:data.color})
+  // })
+  // socket.on('room', (roomDocId) => {
+  //   if (socket.room) {
+  //     socket.leave(socket.room);
+  //     colorArr.unshift(roomDocId); //reset colorArr
+  //   } else {
+  //     let c = colorArr.shift(); //assign user first color
+  //     socket.emit('colorAssign', {color: c})
+  //     socket.room = roomDocId
+  //     socket.join(roomDocId)
+  //   }
+  // })
 
 })
 

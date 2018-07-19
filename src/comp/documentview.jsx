@@ -1,3 +1,12 @@
+//TO DO:
+//fix displaying names instead of id on DocList
+//displaying collaborators on DocumentView
+//color text
+//Alignment
+//scrolling
+//highlight
+//cursor
+
 import React from 'react';
 import ColorPicker from 'material-ui-color-picker'
 import RaisedButton from 'material-ui/RaisedButton';
@@ -92,11 +101,11 @@ export default class DocumentView extends React.Component {
   }
 
   componentDidMount() {
-    this.state.socket.emit('room', this.props.docId);
-
-    this.state.socket.on('colorAssign', (colorObj) => {
+    //this.state.socket.emit('room', this.props.docId);
+    this.state.socket.emit('room', {docId: this.props.docId, userId: this.props.userId});
+    this.state.socket.on('colorAssign', (colorObj) => {  //colorObj has color: String,  viewer: #
       console.log('colorObj', colorObj)
-      this.setState({emitColor: colorObj.color})
+      this.setState({emitColor: colorObj.color, viewer: colorObj.viewer})
       console.log("emitColor in state", this.state.emitColor)
     })
 
@@ -112,6 +121,8 @@ export default class DocumentView extends React.Component {
       let editorState = EditorState.createWithContent(contentState)
       this.setState({editorState})
     })
+
+    console.log('inlinestyles', this.state.editorState.getCurrentInlineStyle())
 
 
 
@@ -148,14 +159,13 @@ export default class DocumentView extends React.Component {
         )
       })
       .catch((err) => {
-        alert('Failed to load document')
         console.log(err)
       })
   }
 
   viewList(userId) {
     this.props.changePage('docList', userId, null);
-    this.state.socket.emit('room', this.state.emitColor)
+    this.state.socket.emit('leaveRoom', {viewer: this.state.viewer, docId: this.props.docId})
   }
   // Modal functions
   handleOpen = event => {
@@ -223,7 +233,7 @@ export default class DocumentView extends React.Component {
   changeColor() {
     var contentState = this.state.editorState.getCurrentContent()
     var selectionState = this.state.editorState.getSelection()
-    contentState = Modifier.applyInlineStyle(contentState,selectionState,'COLOR')
+    contentState = Modifier.applyInlineStyle(contentState,selectionState,`COLOR_${fontcolor}`)
     this.onChange(EditorState.createWithContent(contentState))
   }
   saveFile(e) {
@@ -263,7 +273,7 @@ export default class DocumentView extends React.Component {
       'HIGHLIGHT': { //make this color the color received from receiveChange
         backgroundColor: this.state.receiveChangeHighlightColor //'LightBlue'
       },
-      'COLOR' : {
+      [`COLOR_${fontcolor}`] : {
         color: fontcolor
       }
     }
@@ -349,7 +359,7 @@ export default class DocumentView extends React.Component {
             </Button>
             </div>
             <div>
-              <Typography variant = "caption"> Choose Text Color </Typography>
+              <Typography variant = "caption" style = {{textAlign: 'center'}}> Choose Text Color </Typography>
               <ColorPicker
                 name='color'
                 defaultValue='#000'

@@ -49,7 +49,13 @@ var docSchema = new mongoose.Schema({
   },
   revision: {
     type: Array
-  }
+  },
+  viewer1: String,
+   viewer2: String,
+   viewer3: String,
+   viewer4: String,
+   viewer5: String,
+   viewer6: String
 });
 
 
