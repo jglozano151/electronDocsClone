@@ -1,7 +1,8 @@
 //ROUTES
 import React from 'react';
+import { Link, Element , Events, animateScroll as scroll, scrollSpy, scroller } from 'react-scroll'
 
-const url="http://5953b3c6.ngrok.io"
+const url="https://8c33f5a7.ngrok.io"
 
 const Homepage = require('./comp/homepage').default
 const Signup = require('./comp/signup').default
@@ -15,6 +16,18 @@ export default class App extends React.Component {
     this.state = {
       page: 'homepage' // start with homepage
     }
+  }
+
+  componentDidMount() {
+    Events.scrollEvent.register('begin', function(to, element) {
+      console.log("begin", arguments);
+    });
+
+    Events.scrollEvent.register('end', function(to, element) {
+      console.log("end", arguments);
+    });
+
+    scrollSpy.update()
   }
 
   changePage(page,userId,docId) {
@@ -41,6 +54,15 @@ export default class App extends React.Component {
                           docId={this.state.docId}
                           />
     }
-    return(comp)
+    return(
+      <Element name="test7" className="element" id="containerElement" style={{
+            position: 'relative',
+            height: '100vh',
+            overflow: 'scroll',
+            marginBottom: '100px'
+          }}>
+          {comp}
+      </Element>
+    )
   }
 }
