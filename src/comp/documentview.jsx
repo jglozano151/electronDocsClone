@@ -8,6 +8,9 @@ import Typography from '@material-ui/core/Typography';
 import Chip from '@material-ui/core/Chip';
 import Avatar from '@material-ui/core/Avatar';
 import AddIcon from '@material-ui/icons/Add';
+import ListIcon from '@material-ui/icons/List';
+import ReorderIcon from '@material-ui/icons/Reorder';
+import TocIcon from '@material-ui/icons/Toc'
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Fade from '@material-ui/core/Fade';
@@ -79,8 +82,6 @@ export default class DocumentView extends React.Component {
     this.onChange = (editorState) => {
       var contentState = editorState.getCurrentContent()
       var selectionState = editorState.getSelection()
-      console.log('emit', selectionState)
-
       this.setState({editorState})
       this.state.socket.emit('makeChange', {
         text: JSON.stringify(convertToRaw(contentState)),
@@ -131,7 +132,6 @@ export default class DocumentView extends React.Component {
           })
         }
         let collaborators = []
-        console.log(doc.collaborators)
         Promise.all(
           doc.collaborators.map((collab) => {
             fetch(this.props.url + '/users/' + collab, {
@@ -142,7 +142,6 @@ export default class DocumentView extends React.Component {
               .then(response => response.json())
               .then((user) => {
                 collaborators.push(user.name)
-                console.log(collaborators)
               })
           })
           .then(this.setState({collaborators}))
@@ -279,45 +278,14 @@ export default class DocumentView extends React.Component {
                 color = "primary">
                 Back to DocList
               </Button>
-              Edit Document
-            </Typography>
-          </CardContent>
-        </Card>
-        <Card style = {buttonStyle}>
-          <CardContent>
-            <Typography style = {buttonStyle}> <ion-icon name = "create"/> Editing '{this.state.docName}' </Typography>
-            {this.state.collaborators.map((collaborator) => (
-              <Chip style = {buttonStyle} avatar = {<Avatar>{collaborator[0]}</Avatar>} label = {collaborator}/>
-            ))}
-            <Button style = {buttonStyle} variant = "contained" color = "primary"
-              style = {buttonStyle} onMouseDown = {(e) => this.saveFile(e)}>
-              Save
-            </Button>
-            {/* Text editor options styles */}
-            <div>
-              <Button variant = {this.state.bold ? 'contained' : 'outlined'} style = {buttonStyle} onMouseDown = {(e) => this._onBoldClick(e)}>
-                <b> B </b>
+              <ion-icon name = "create"/> {this.state.docName}
+              {this.state.collaborators.map((collaborator) => (
+                <Chip style = {buttonStyle} avatar = {<Avatar>{collaborator[0]}</Avatar>} label = {collaborator}/>
+              ))}
+              <Button style = {buttonStyle} variant = "contained" color = "primary"
+                style = {buttonStyle} onMouseDown = {(e) => this.saveFile(e)}>
+                Save
               </Button>
-              <Button variant = {this.state.italic ? 'contained' : 'outlined'} style = {buttonStyle} onMouseDown = {(e) => this._onItalicClick(e)}>
-                <i> I </i>
-              </Button>
-              <Button variant = {this.state.underline ? 'contained' : 'outlined'} style = {buttonStyle} onMouseDown = {(e) => this._onUnderlineClick(e)}>
-                <u> U </u>
-              </Button>
-              <ColorPicker
-                name='color'
-                defaultValue='#000'
-                onChange={color => this.colorpicker(color)}
-              />
-              <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.alignLeft(e)}>
-                <ion-icon name="list"/>
-              </RaisedButton>
-              <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.alignCenter(e)}>
-                <ion-icon name = "menu"/>
-              </RaisedButton>
-              <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.alignRight(e)}>
-                <ion-icon name = "remove"/>
-              </RaisedButton>
               <Button variant = "contained" color = "primary" onClick = {this.handleOpen}> History </Button>
               <Popover
                 open = {Boolean(anchorEl)}
@@ -342,8 +310,12 @@ export default class DocumentView extends React.Component {
                   ))}
                 </div>
               </Popover>
-            </div>
-            <ion-icon name = "search" style = {{marginLeft: '20px'}}/>
+            </Typography>
+          </CardContent>
+        </Card>
+        <Card style = {buttonStyle}>
+          <CardContent>
+            <ion-icon name = "search"/>
             <Input value = {this.state.search}
               onChange = {this.onChangeSearch}
               placeholder = "Search..."
@@ -351,6 +323,41 @@ export default class DocumentView extends React.Component {
           </CardContent>
         </Card>
         <Card style = {editorStyle}>
+          <div style = {{display: 'flex', borderBottom: '1px dashed grey', marginBottom: '15px'}}>
+            <div>
+              <Typography variant = "caption" style = {{textAlign: 'center', marginBottom: '10px'}}> Text Styling </Typography>
+              <Button variant = {this.state.bold ? 'outlined' : ''} onMouseDown = {(e) => this._onBoldClick(e)}>
+                <b> B </b>
+              </Button>
+              <Button variant = {this.state.italic ? 'outlined' : ''} onMouseDown = {(e) => this._onItalicClick(e)}>
+                <i> I </i>
+              </Button>
+              <Button variant = {this.state.underline ? 'outlined' : ''} onMouseDown = {(e) => this._onUnderlineClick(e)}>
+                <u> U </u>
+              </Button>
+            </div>
+            <div>
+              <Typography variant = "caption" style = {{textAlign: 'center'}}> Text Alignment </Typography>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.alignLeft(e)}>
+              <ListIcon/>
+            </Button>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.alignCenter(e)}>
+              <ReorderIcon/>
+            </Button>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.alignRight(e)}>
+              <TocIcon/>
+            </Button>
+            </div>
+            <div>
+              <Typography variant = "caption"> Choose Text Color </Typography>
+              <ColorPicker
+                name='color'
+                defaultValue='#000'
+                onChange={color => this.colorpicker(color)}
+              />
+            </div>
+
+          </div>
           <Editor customStyleMap={styleMap} style = {editorStyle} editorState = {this.state.editorState} onChange = {this.onChange.bind(this)}/>
         </Card>
 
