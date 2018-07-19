@@ -213,19 +213,23 @@ io.on('connection', function (socket) {
 
   socket.on('makeChange', function(data) {
     console.log('makechange', data)
-    socket.to(socket.room).emit('receiveChange', {text:data.text})
+    console.log('color', data.color)
+    socket.to(socket.room).emit('receiveChange', {text:data.text, selection:data.selection, color:data.color})
   })
 
   socket.on('room', (roomDocId) => {
     if (socket.room) {
       socket.leave(socket.room);
-      colorArr.unshift(socket.color); //reset colorArr
-      socket.color = null;
+      colorArr.unshift(roomDocId); //reset colorArr
+      //socket.color = null;
     }
     else {
-      socket.color = colorArr.shift(); //assign user first color
+      let c = colorArr.shift(); //assign user first color
+      socket.emit('colorAssign', {color: c})
       socket.room = roomDocId
       socket.join(roomDocId)
+      //assign color
+      
     }
   })
 

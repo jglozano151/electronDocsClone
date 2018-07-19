@@ -1,4 +1,5 @@
 import React from 'react';
+import ColorPicker from 'material-ui-color-picker'
 import RaisedButton from 'material-ui/RaisedButton';
 import Card from '@material-ui/core/Card';
 import Button from '@material-ui/core/Button';
@@ -14,10 +15,39 @@ import Popover from '@material-ui/core/Popover';
 import Input from '@material-ui/core/Input';
 
 // import Button from 'semantic-ui-react';
-import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToRaw, Modifier} from 'draft-js';
+import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToRaw, Modifier, SelectionState, CompositeDecorator} from 'draft-js';
 
 // SOCKET
 const io = require('socket.io-client')
+let fontcolor;
+
+// Constants for search & highlight functionality
+const generateDecorator = (highlightTerm) => {
+  const regex = new RegExp(highlightTerm, 'g');
+  return new CompositeDecorator([{
+    strategy: (contentBlock, callback) => {
+      if (highlightTerm !== '') {
+        findWithRegex(regex, contentBlock, callback);
+      }
+    },
+    component: SearchHighlight
+  }])
+}
+
+const findWithRegex = (regex, contentBlock, callback) => {
+  const text = contentBlock.getText();
+  let matchArr, start, end;
+  while ((matchArr = regex.exec(text)) !== null) {
+    start = matchArr.index;
+    end = start + matchArr[0].length;
+    callback(start, end);
+  }
+}
+
+const SearchHighlight = (props) => (
+  <span style = {{background: 'yellow'}}>{props.children}</span>
+);
+
 
 export default class DocumentView extends React.Component {
   constructor(props) {
@@ -38,44 +68,51 @@ export default class DocumentView extends React.Component {
       newCollabs: [],
       myChange: false,
       socket: io.connect(this.props.url),
-      history: []
+      history: [],
+      search: '',
+      replace: '',
+      fontcolor: '',
+      emitColor: '',  //color that this socket emits when making a change
+      receiveChangeHighlightColor: ''  //highlight color for other user
     }
+
     this.onChange = (editorState) => {
-      // var selectionState = editorState.getSelection()
-      // var collapsed = selectionState.isCollapsed()
-      // if (!collapsed) {
-      //   editorState = Modifier.applyInlineStyle(editorState,selectionState,'HIGHLIGHT')
-      // }
-
-
-      // if (collapsed) {
-      //   //render cursor
-      // } else {
-      //   editorState = Modifier.applyInlineStyle(editorState,selectionState,'HIGHLIGHT')
-      // }
-      // var selectionState = editorState.getSelection()
-      // var collapsed = selectionState.isCollapsed()
-      // var anchorKey = selectionState.getAnchorKey()
-      // var anchorOffset = selectionState.getAnchorOffset()
-      // var focusKey = selectionState.getFocusKey()
-      // var focusOffset= selectionState.getFocusOffset()
-
-      const contentState = editorState.getCurrentContent()
+      var contentState = editorState.getCurrentContent()
+      var selectionState = editorState.getSelection()
+      console.log('emit', selectionState)
 
       this.setState({editorState})
-      this.state.socket.emit('makeChange', {text: JSON.stringify(convertToRaw(contentState))})
+      this.state.socket.emit('makeChange', {
+        text: JSON.stringify(convertToRaw(contentState)),
+        selection:selectionState,
+        color: this.state.emitColor
+      })
     }
   }
 
   componentDidMount() {
     this.state.socket.emit('room', this.props.docId);
 
+    this.state.socket.on('colorAssign', (colorObj) => {
+      console.log('colorObj', colorObj)
+      this.setState({emitColor: colorObj.color})
+      console.log("emitColor in state", this.state.emitColor)
+    })
+
     this.state.socket.on('receiveChange', (data) => {
+      console.log('highlight color of received text', data.color)  //get color of highlight with data.color
+      this.setState({receiveChangeHighlightColor: data.color})
       console.log('Receiving from server: ', data.text)
-      let newtext = convertFromRaw(JSON.parse(data.text))
-      let editorState = EditorState.createWithContent(newtext)
+      let contentState = convertFromRaw(JSON.parse(data.text))
+      var selectionState = SelectionState.createEmpty()
+      var updatedSelectionState = selectionState.merge(data.selection)
+      contentState = Modifier.applyInlineStyle(contentState,updatedSelectionState,'HIGHLIGHT')
+
+      let editorState = EditorState.createWithContent(contentState)
       this.setState({editorState})
     })
+
+
 
     fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, {
         method: 'GET',
@@ -116,8 +153,10 @@ export default class DocumentView extends React.Component {
         console.log(err)
       })
   }
+
   viewList(userId) {
-    this.props.changePage('docList', userId, null)
+    this.props.changePage('docList', userId, null);
+    this.state.socket.emit('room', this.state.emitColor)
   }
   // Modal functions
   handleOpen = event => {
@@ -177,6 +216,17 @@ export default class DocumentView extends React.Component {
       this.setState({underline: false}) : this.setState({underline: true})
     this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, 'UNDERLINE'))
   }
+  colorpicker(color) {
+    fontcolor=color
+    console.log(fontcolor)
+    this.changeColor()
+  }
+  changeColor() {
+    var contentState = this.state.editorState.getCurrentContent()
+    var selectionState = this.state.editorState.getSelection()
+    contentState = Modifier.applyInlineStyle(contentState,selectionState,'COLOR')
+    this.onChange(EditorState.createWithContent(contentState))
+  }
   saveFile(e) {
     e.preventDefault()
     const contentState = this.state.editorState.getCurrentContent()
@@ -196,8 +246,11 @@ export default class DocumentView extends React.Component {
     })
     .catch(err=>console.log(err))
   }
-  searchTerm = (term) => {
-    console.log(term.target.value)
+  onChangeSearch = (e) => {
+    this.setState({
+      search: e.target.value,
+      editorState: EditorState.set(this.state.editorState, {decorator: generateDecorator(e.target.value)})
+    })
   }
   revertDoc = (text) => {
     let newtext = convertFromRaw(JSON.parse(text))
@@ -207,12 +260,25 @@ export default class DocumentView extends React.Component {
   // Font Color, Font Size, Left/center/right align paragraph, bullet/numbered lists
   render() {
     const { anchorEl } = this.state
+    const styleMap = {
+      'HIGHLIGHT': { //make this color the color received from receiveChange
+        backgroundColor: this.state.receiveChangeHighlightColor //'LightBlue'
+      },
+      'COLOR' : {
+        color: fontcolor
+      }
+    }
     return (
       <div>
         <Card>
           <CardContent>
             <Typography variant = "headline">
-              <Button onClick = {() => this.viewList(this.props.userId)} style = {{buttonStyle}} variant = "contained"/>
+              <Button onClick = {() => this.viewList(this.props.userId)}
+                style = {{marginRight: '20px'}}
+                variant = "contained"
+                color = "primary">
+                Back to DocList
+              </Button>
               Edit Document
             </Typography>
           </CardContent>
@@ -238,9 +304,11 @@ export default class DocumentView extends React.Component {
               <Button variant = {this.state.underline ? 'contained' : 'outlined'} style = {buttonStyle} onMouseDown = {(e) => this._onUnderlineClick(e)}>
                 <u> U </u>
               </Button>
-              <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.changeColor(e)}>
-                Color
-              </RaisedButton>
+              <ColorPicker
+                name='color'
+                defaultValue='#000'
+                onChange={color => this.colorpicker(color)}
+              />
               <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.alignLeft(e)}>
                 <ion-icon name="list"/>
               </RaisedButton>
@@ -264,7 +332,8 @@ export default class DocumentView extends React.Component {
                     <Card>
                       <CardContent>
                         <Typography variant = "subheading"> {history.author} </Typography>
-                        <Typography variant = "subheading"> {history.time} </Typography>
+                        <Typography variant = "body1"> Date: {history.time.substring(0, 10)} </Typography>
+                        <Typography variant = "caption"> At {history.time.substring(11, 19)} </Typography>
                         <Button style = {buttonStyle} variant = "contained"
                           onMouseDown = {() => this.revertDoc(history.text)}>
                           Revert </Button>
@@ -274,11 +343,15 @@ export default class DocumentView extends React.Component {
                 </div>
               </Popover>
             </div>
-            <ion-icon name = "search" style = {{marginLeft: '20px'}}/> <Input onChange={(term) => this.searchTerm(term)} />
+            <ion-icon name = "search" style = {{marginLeft: '20px'}}/>
+            <Input value = {this.state.search}
+              onChange = {this.onChangeSearch}
+              placeholder = "Search..."
+            />
           </CardContent>
         </Card>
         <Card style = {editorStyle}>
-          <Editor style = {editorStyle} editorState = {this.state.editorState} onChange = {this.onChange.bind(this)}/>
+          <Editor customStyleMap={styleMap} style = {editorStyle} editorState = {this.state.editorState} onChange = {this.onChange.bind(this)}/>
         </Card>
 
       </div>
@@ -286,13 +359,14 @@ export default class DocumentView extends React.Component {
   }
 }
 
+{/* <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.changeColor(e)}>
+  Color
+</RaisedButton> */}
+
 const editorStyle = {
   margin: '20px',
   minHeight: '350px',
   padding: '20px',
-  'HIGHLIGHT': {
-    backgroundColor: 'lightgreen'
-  }
 }
 
 const buttonStyle = {
