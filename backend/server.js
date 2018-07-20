@@ -225,8 +225,11 @@ io.on('connection', function (socket) {
 
   socket.on('makeChange', function(data) {
     console.log('makechange', data)
-    console.log('color', data.color)
-    socket.to(socket.room).emit('receiveChange', {text:data.text, selection:data.selection, color:data.color})
+    socket.to(socket.room).emit('receiveChange', {text:data.text, selection:data.selection}) //, color:data.color})
+  })
+  socket.on('sendHighlight', function(data) {  //data has keys like makeChange- text, selection, color
+    console.log('viewer', data.viewer)
+    socket.to(socket.room).emit('receiveHighlight', {text:data.text, selection:data.selection, viewer:data.viewer})
   })
 
   socket.on('colorChange', function(color) {
@@ -249,22 +252,22 @@ io.on('connection', function (socket) {
     const viewerNum = obj.viewer;
     const docId = obj.docId;
     switch(viewerNum) {
-      case 1:
+      case 'h1':
       Doc.findByIdAndUpdate(docId, {viewer1: ''}, function(err, updated) {return});
       break;
-      case 2:
+      case 'h2':
       Doc.findByIdAndUpdate(docId, {viewer2: ''}, function(err, updated) {return});
       break;
-      case 3:
+      case 'h3':
       Doc.findByIdAndUpdate(docId, {viewer3: ''}, function(err, updated) {return});
       break;
-      case 4:
+      case 'h4':
       Doc.findByIdAndUpdate(docId, {viewer4: ''}, function(err, updated) {return});
       break;
-      case 5:
+      case 'h5':
       Doc.findByIdAndUpdate(docId, {viewer5: ''}, function(err, updated) {return});
       break;
-      case 6:
+      case 'h6':
       Doc.findByIdAndUpdate(docId, {viewer6: ''}, function(err, updated) {return});
     }
   })
@@ -281,32 +284,32 @@ io.on('connection', function (socket) {
         if (!foundDoc.viewer1) { // set foundDoc.viewer1 = true    ...{id: use} ?
         Doc.findByIdAndUpdate(roomDocId, {viewer1: userId}, function(err, foundDoc2) {
           if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', {color: 'LightBlue', viewer: 1})
+          else socket.emit('colorAssign', 'h1') //{color: 'LightBlue', viewer: 'h1'})
         })
       } else if (!foundDoc.viewer2) {
         Doc.findByIdAndUpdate(roomDocId, {viewer2: userId}, function(err, foundDoc2) {
           if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', {color: 'LightGreen', viewer: 2})
+          else socket.emit('colorAssign', 'h2') //{color: 'LightGreen', viewer: 'h2'})
         })
       } else if (!foundDoc.viewer3) {
         Doc.findByIdAndUpdate(roomDocId, {viewer3: userId}, function(err, foundDoc2) {
           if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', {color: 'Red', viewer: 3})
+          else socket.emit('colorAssign', 'h3') //{color: 'Red', viewer: 'h3'})
         })
       } else if (!foundDoc.viewer4) {
-        Doc.findByIdAndUpdate(roomDocId, {viewer4: true}, function(err, foundDoc2) {
+        Doc.findByIdAndUpdate(roomDocId, {viewer4: userId}, function(err, foundDoc2) {
           if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', {color: 'LightPink', viewer: 4})
+          else socket.emit('colorAssign', 'h4') //{color: 'LightPink', viewer: 'h4'})
         })
       } else if (!foundDoc.viewer5) {
-        Doc.findByIdAndUpdate(roomDocId, {viewer5: true}, function(err, foundDoc2) {
+        Doc.findByIdAndUpdate(roomDocId, {viewer5: userId}, function(err, foundDoc2) {
           if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', {color: 'Orange', viewer: 5})
+          else socket.emit('colorAssign', 'h5') //{color: 'Orange', viewer: 'h5'})
         })
       } else if (!foundDoc.viewer6) {
-        Doc.findByIdAndUpdate(roomDocId, {viewer6: true}, function(err, foundDoc2) {
+        Doc.findByIdAndUpdate(roomDocId, {viewer6: userId}, function(err, foundDoc2) {
           if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', {color: 'Purple', viewer: 6})
+          else socket.emit('colorAssign', 'h6') //{color: 'Purple', viewer: 'h6'})
         })
       }
     }

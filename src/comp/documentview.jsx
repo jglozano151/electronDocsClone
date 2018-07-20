@@ -83,25 +83,60 @@ export default class DocumentView extends React.Component {
       receiveChangeHighlightColor: ''  //highlight color for other user
     }
 
+    // this.onChange = (editorState) => {
+    //   var contentState = editorState.getCurrentContent()
+    //   var selectionState = editorState.getSelection()
+    //   this.setState({editorState})
+    //   this.state.socket.emit('makeChange', {
+    //     text: JSON.stringify(convertToRaw(contentState)),
+    //     selection:selectionState,
+    //     color: this.state.emitColor
+    //   })
+    // }
     this.onChange = (editorState) => {
       var contentState = editorState.getCurrentContent()
       var selectionState = editorState.getSelection()
-      this.setState({editorState})
-      this.state.socket.emit('makeChange', {
-        text: JSON.stringify(convertToRaw(contentState)),
-        selection:selectionState,
-        color: this.state.emitColor
-      })
+
+      if (selectionState.isCollapsed()) {
+        console.log(true)
+        this.setState({editorState})
+        this.state.socket.emit('makeChange', {
+          text: JSON.stringify(convertToRaw(contentState)),
+          selection: selectionState
+        })
+      } else {
+        this.setState({editorState})
+        this.state.socket.emit('sendHighlight', {
+          text: JSON.stringify(convertToRaw(contentState)),
+          selection: selectionState,
+          viewer: this.state.viewer
+        })
+      }
     }
   }
 
   componentDidMount() {
     //this.state.socket.emit('room', this.props.docId);
     this.state.socket.emit('room', {docId: this.props.docId, userId: this.props.userId});
-    this.state.socket.on('colorAssign', (colorObj) => {  //colorObj has color: String,  viewer: #
-      console.log('colorObj', colorObj)
-      this.setState({emitColor: colorObj.color, viewer: colorObj.viewer})
-      console.log("emitColor in state", this.state.emitColor)
+    this.state.socket.on('colorAssign', (viewer) => {  //colorObj has color: String,  viewer: #
+      console.log('viewer string input', viewer)
+      this.setState({viewer})  //, emitColor: colorObj.color})
+    })
+
+    //listening for a highlight
+    this.state.socket.on('receiveHighlight', (data) => {  //data has keys text, selection, viewer
+      console.log('viewer on client receiveHighlight', data.viewer)
+
+      var contentState = this.state.editorState.getCurrentContent()
+      //this.onChange(EditorState.createWithContent(contentState))
+      var selectionState = SelectionState.createEmpty()  //moved to receive highlight, add new highlight portion
+      var updatedSelectionState = selectionState.merge(data.selection)
+      // var selectionState = this.state.editorState.getSelection()  //get previous highlight
+      // contentState = Modifier.removeInlineStyle(contentState, selectionState, this.state.viewer)  //remove previous highlight
+      contentState = Modifier.applyInlineStyle(contentState,updatedSelectionState, data.viewer)
+      let editorState = EditorState.createWithContent(contentState)
+      this.setState({editorState})
+      //this.onChange(EditorState.createWithContent(contentState))
     })
 
     this.state.socket.on('receiveColorChange', (color) => {
@@ -111,7 +146,7 @@ export default class DocumentView extends React.Component {
     this.state.socket.on('receiveChange', (data) => {
       console.log('highlight color of received text', data.color)  //get color of highlight with data.color
       this.setState({receiveChangeHighlightColor: data.color})
-      console.log('Receiving from server: ', data.text)
+      //console.log('Receiving from server: ', data.text)
       let contentState = convertFromRaw(JSON.parse(data.text))
       var selectionState = SelectionState.createEmpty()
       var updatedSelectionState = selectionState.merge(data.selection)
@@ -331,6 +366,7 @@ export default class DocumentView extends React.Component {
               </Popover>
             </Typography>
           </CardContent>
+          <Typography style = {{marginLeft: '20px'}} variant="caption">Document ID: {this.props.docId}</Typography>
         </Card>
         <Card style = {buttonStyle}>
           <CardContent>
@@ -391,9 +427,6 @@ export default class DocumentView extends React.Component {
 </RaisedButton> */}
 
 const styleMap = {
-  'HIGHLIGHT': { //make this color the color received from receiveChange
-    backgroundColor: 'LightBlue'
-  },
   'left': {
     textAlignment: 'left'
   },
@@ -403,6 +436,24 @@ const styleMap = {
   'right': {
     textAlignment: 'right'
   },
+  'h1': { //make this color the color received from receiveChange
+    backgroundColor: 'LightBlue'
+  },
+  'h2': {
+    backgroundColor: 'LightGreen'
+  },
+  'h3': {
+    backgroundColor: 'Red'
+  },
+  'h4': {
+    backgroundColor: 'LightPink'
+  },
+  'h5': {
+    backgroundColor: 'Orange'
+  },
+  'h6': {
+    backgroundColor: 'Purple'
+  }
 }
 
 const editorStyle = {
