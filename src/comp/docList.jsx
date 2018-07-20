@@ -14,6 +14,8 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Fade from '@material-ui/core/Fade';
 import Popover from '@material-ui/core/Popover';
 import Input from '@material-ui/core/Input';
+import InputLabel from '@material-ui/core/InputLabel';
+import FormControl from '@material-ui/core/FormControl';
 
 export default class DocList extends React.Component {
  constructor(props) {
@@ -135,6 +137,19 @@ export default class DocList extends React.Component {
    this.props.changePage('documentview', this.props.userId, docId)
  }
 
+//logout
+logout() {
+  fetch(this.props.url+'/logout')
+  .then(response => (response.json()))
+  .then((res) => {
+    if (res.success) {
+      this.props.changePage('homepage',null,null)
+      console.log('logout success')
+    }
+  })
+  .catch((err) => console.log('logout error', err))
+}
+
  render() {
    return (
      <Card>
@@ -144,18 +159,20 @@ export default class DocList extends React.Component {
            <Button style = {buttonStyle} variant = "contained"
              onClick={()=>this.openNewModal()}> New Document
            </Button>
-           <Modal isOpen={this.state.newModalIsOpen}>
+           <Modal style={modalStyle} isOpen={this.state.newModalIsOpen}>
              <Typography variant = "headline" style = {{marginBottom: '20px'}}> Create a New Document </Typography>
-             <Input style = {{marginBottom: '10px', marginRight: '10px'}}
-               placeholder="Title"
-               value={this.state.newDocTitle}
-               onChange={(e)=>this.setState({newDocTitle:e.target.value})}/>
-             <Input type="password" style = {{marginBottom: '10px'}}
-               placeholder="Password"
-               value={this.state.newDocPassword}
-               onChange={(e)=>this.setState({newDocPassword:e.target.value})}/>
-             <div>
-               <Button style = {buttonStyle} variant = "contained"
+             <div style={divStyle}>
+               <FormControl style={formStyle}>
+                 <InputLabel htmlFor="name-simple">Title</InputLabel>
+                 <Input onChange={(e) => this.setState({newDocTitle: e.target.value})} />
+               </FormControl>
+               <FormControl style={formStyle}>
+                 <InputLabel htmlFor="name-simple">Password</InputLabel>
+                 <Input type="password" onChange={(e) => this.setState({newDocPassword: e.target.value})} />
+               </FormControl>
+             </div>
+             <div style={newStyle}>
+               <Button style = {buttonStyle} variant = "contained" color = "primary"
                  onClick={()=>this.saveNewModal()}> Create </Button>
                <Button style = {buttonStyle} variant = "contained"
                  onClick={()=>this.cancelNewModal()}> Cancel </Button>
@@ -163,18 +180,23 @@ export default class DocList extends React.Component {
            </Modal>
            <Button style = {buttonStyle} variant = "contained"
              onClick={()=>this.openCollabModel()}> Join Document</Button>
-           <Modal isOpen={this.state.collabModalIsOpen}>
+           <Button style = {buttonStyle} variant = "contained"
+             onClick={()=>this.logout()}> Logout</Button>
+           <Modal style={modalStyle} isOpen={this.state.collabModalIsOpen}>
              <Typography variant = "headline" style = {{marginBottom: '20px'}}>
                Join a Document as Collaborator </Typography>
-             <Input style = {{marginBottom: '10px', marginRight: '10px'}} placeholder="Document ID"
-                   value={this.state.collabDocID}
-                   onChange={(e)=>this.setState({collabDocID:e.target.value})}/>
-             <Input type="password" style = {{marginBottom: '10px'}}
-               placeholder="Password"
-               value={this.state.collabDocPassword}
-               onChange={(e)=>this.setState({collabDocPassword:e.target.value})}/>
-             <div>
-               <Button style = {buttonStyle} variant = "contained" onClick={()=>this.joinCollabModal()}>Join</Button>
+             <div style={divStyle}>
+               <FormControl style={formStyle}>
+                 <InputLabel htmlFor="name-simple">Document ID</InputLabel>
+                 <Input onChange={(e) => this.setState({collabDocID: e.target.value})} />
+               </FormControl>
+               <FormControl style={formStyle}>
+                 <InputLabel htmlFor="name-simple">Password</InputLabel>
+                 <Input type="password" onChange={(e) => this.setState({collabDocPassword: e.target.value})} />
+               </FormControl>
+             </div>
+             <div style={newStyle}>
+               <Button style = {buttonStyle} variant = "contained" color = "primary" onClick={()=>this.joinCollabModal()}>Join</Button>
                <Button style = {buttonStyle} variant = "contained" onClick={()=>this.cancelCollabModal()}>Cancel</Button>
              </div>
            </Modal>
@@ -221,4 +243,32 @@ class Name extends React.Component {
 
 const buttonStyle = {
  margin: '10px'
+}
+
+const modalStyle = {
+  content : {
+    top                   : '50%',
+    left                  : '50%',
+    right                 : 'auto',
+    bottom                : 'auto',
+    marginRight           : '-50%',
+    transform             : 'translate(-50%, -50%)'
+  }
+}
+
+const formStyle = {
+  width:'200px',
+  margin: '2px'
+}
+
+const divStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  flexDirection: 'column',
+  margin:'10px'
+}
+
+const newStyle = {
+  display: 'flex',
+  justifyContent: 'center',
 }
