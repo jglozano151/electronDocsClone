@@ -20,6 +20,7 @@ var LocalStrategy = require('passport-local').Strategy;
 var models = require('./models.js');
 var User = models.User
 var Doc = models.Doc
+var Color = models.Color
 
 // set passport middleware to first try local strategy
 passport.use(new LocalStrategy( function (username, password, cb){
@@ -211,6 +212,11 @@ app.get('/users/:userId', function(req, res) {
   })
 })
 
+app.get('/getStyleMap', function(req,res) {
+  Color.find()
+  .then((arr) => {res.json({arr: arr})})
+})
+
 
 
 io.on('connection', function (socket) {
@@ -224,7 +230,18 @@ io.on('connection', function (socket) {
   })
 
   socket.on('colorChange', function(color) {
-    socket.emit('receiveColorChange', color)
+    socket.to(socket.room).emit('receiveColorChange', color)
+    Color.find({color:color})
+    .then(result => {
+      if (result.length === 0) {
+        let newColor = new Color({
+          color: color,
+          styleMap: {color:color}
+        })
+        newColor.save((error) => console.log('newcolor',error))
+      }
+    })
+    .catch(err => console.log('err', err))
   })
 
   socket.on('leaveRoom', (obj) => {

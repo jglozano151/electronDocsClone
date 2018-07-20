@@ -58,11 +58,19 @@ var docSchema = new mongoose.Schema({
    viewer6: String
 });
 
+var colorSchema = new mongoose.Schema({
+  color: String,
+  styleMap: Object
+})
+
+
 
 var User = mongoose.model('User', userSchema);
 var Doc = mongoose.model('Doc', docSchema);
+var Color = mongoose.model('Color', colorSchema)
 
 module.exports = {
   User: User,
-  Doc: Doc
+  Doc: Doc,
+  Color: Color
 };

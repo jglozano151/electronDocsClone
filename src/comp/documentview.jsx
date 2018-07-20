@@ -1,5 +1,4 @@
 //TO DO:
-//color text
 //Alignment
 //highlight
 //cursor
@@ -71,6 +70,7 @@ export default class DocumentView extends React.Component {
       leftAlign: true,
       centerAlign: false,
       rightAlign: false,
+      alignment: {'textAlign': 'left'},
       anchorEl: null,
       anchorEl2: null,
       newCollabs: [],
@@ -121,45 +121,58 @@ export default class DocumentView extends React.Component {
       this.setState({editorState})
     })
 
-    console.log('inlinestyles', this.state.editorState.getCurrentInlineStyle())
-
-
-
-    fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+    fetch(this.props.url + '/getStyleMap', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => (response.json()))
+    .then((obj) => {
+      obj.arr.forEach((item) => {
+        styleMap[item.color] = item.styleMap
       })
-      .then(response => (response.json()))
-      .then((doc) => {
-        this.setState({docName: doc.title, owner: doc.owner, history: doc.revision})
-        if (doc.revision) {
-          let text = convertFromRaw(JSON.parse(doc.revision[doc.revision.length-1].text))
-          let editorState = EditorState.createWithContent(text)
-          this.setState({
-            editorState: editorState
-          })
-        }
-        let collaborators = []
-        Promise.all(
-          doc.collaborators.map((collab) => {
-            fetch(this.props.url + '/users/' + collab, {
-              headers: {
-                'Content-Type': 'application/json'
-              }
+    })
+    .then(() => {
+      fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        .then(response => (response.json()))
+        .then((doc) => {
+          this.setState({docName: doc.title, owner: doc.owner, history: doc.revision})
+          if (doc.revision) {
+            let text = convertFromRaw(JSON.parse(doc.revision[doc.revision.length-1].text))
+            let editorState = EditorState.createWithContent(text)
+            this.setState({
+              editorState: editorState
             })
-              .then(response => response.json())
-              .then((user) => {
-                collaborators.push(user.name)
+          }
+          let collaborators = []
+          Promise.all(
+            doc.collaborators.map((collab) => {
+              fetch(this.props.url + '/users/' + collab, {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
               })
-          })
-          .then(this.setState({collaborators}))
-        )
-      })
-      .catch((err) => {
-        console.log(err)
-      })
+                .then(response => response.json())
+                .then((user) => {
+                  collaborators.push(user.name)
+                })
+            })
+            .then(this.setState({collaborators}))
+          )
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+    })
+    .catch((err) => {
+      console.log('getStyleMap error', err)
+    })
   }
 
   viewList(userId) {
@@ -231,6 +244,14 @@ export default class DocumentView extends React.Component {
     if (!styleMap.hasOwnProperty(color)) styleMap[color] = {color:color}
     contentState = Modifier.applyInlineStyle(contentState,selectionState,`${color}`)
     this.onChange(EditorState.createWithContent(contentState))
+  }
+  myBlockStyleFn = (contentBlock) => {
+    return this.state.alignment
+  }
+  setAlignment = (e, align) => {
+    e.preventDefault()
+    // this.state.socket.emit('alignmentChange', align)
+    this.setState({alignment: align})
   }
   saveFile(e) {
     e.preventDefault()
@@ -336,13 +357,13 @@ export default class DocumentView extends React.Component {
             </div>
             <div>
               <Typography variant = "caption" style = {{textAlign: 'center'}}> Text Alignment </Typography>
-            <Button style = {buttonStyle} onMouseDown = {(e) => this.alignLeft(e)}>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,{textAlign: 'left'})}>
               <ListIcon/>
             </Button>
-            <Button style = {buttonStyle} onMouseDown = {(e) => this.alignCenter(e)}>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,{textAlign: 'center'})}>
               <ReorderIcon/>
             </Button>
-            <Button style = {buttonStyle} onMouseDown = {(e) => this.alignRight(e)}>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,{textAlign: 'right'})}>
               <TocIcon/>
             </Button>
             </div>
@@ -356,7 +377,8 @@ export default class DocumentView extends React.Component {
             </div>
 
           </div>
-          <Editor customStyleMap={styleMap} style = {editorStyle} editorState = {this.state.editorState} onChange = {this.onChange.bind(this)}/>
+          <Editor customStyleMap={styleMap} blockStyleFn={this.myBlockStyleFn} style = {editorStyle}
+                  editorState = {this.state.editorState} onChange = {this.onChange.bind(this)}/>
         </Card>
 
       </div>
@@ -371,6 +393,15 @@ export default class DocumentView extends React.Component {
 const styleMap = {
   'HIGHLIGHT': { //make this color the color received from receiveChange
     backgroundColor: 'LightBlue'
+  },
+  'left': {
+    textAlignment: 'left'
+  },
+  'center': {
+    textAlign: 'center'
+  },
+  'right': {
+    textAlignment: 'right'
   },
 }
 
