@@ -60,15 +60,6 @@ function(req, res) {
   res.json({success: true, userId: req.user.id}); // `req.user` contains the authenticated user.
 })
 
-//user colors
-var colors = ['LightBlue','LightGray','LightGreen','LightPink','LightSalmon','MediumBlue',
-              'MidnightBlue','Olive','Orange','OrangeRed','Pink','Purple','Red','Sienna']
-function getRandomIntInclusive() {
-  let min = Math.ceil(0);
-  let max = Math.floor(colors.length-1);
-  return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
-}
-
 // server side, saving a user
 app.post('/signup', function(req, res) {
   let ind = getRandomIntInclusive()
@@ -76,8 +67,7 @@ app.post('/signup', function(req, res) {
     email: req.body.email,
     password: req.body.password,
     name: req.body.name,
-    docs: [],
-    color: colors[ind]
+    docs: []
   });
   newUser.save(function(error, user) {
     if (error) {
@@ -90,6 +80,13 @@ app.post('/signup', function(req, res) {
   })
 });
 
+//User logout
+app.get('/logout', function(req, res){
+  req.logout();
+  res.json({success: true});
+});
+
+// Create new document
 app.post('/newDoc', function(req, res) {
   const newDoc = new Doc ({
    owner: req.body.userId,
@@ -105,7 +102,7 @@ app.post('/newDoc', function(req, res) {
     viewer6: ''
   });
 
-  newDoc.save(function(err, success) {    /* REWRITE: .then()s instead of if/elses */
+  newDoc.save(function(err, success) {
     if (err) {res.json({success: false})}
     else {
       var userDocs;
@@ -125,6 +122,7 @@ app.post('/newDoc', function(req, res) {
   })
 })
 
+//Save Document
 app.post('/saveFile/:docId', function(req, res) {
   let revisionHistory;
   User.findById(req.body.userId, (err, author) => {
@@ -144,6 +142,7 @@ app.post('/saveFile/:docId', function(req, res) {
   })
 })
 
+//Join Document
 app.post('/joinDoc', function(req, res) {
   let previousCollabs;
   let previousDocs;
@@ -192,6 +191,7 @@ app.get('/getDocList/:userId', function (req, res) {
   })
 })
 
+//View a document as specific user
 app.get('/documentview/:userId/:docId', function(req, res) {
   //consider case where userId does not have persmission to view this doc (not an owner or collaborator)
   Doc.findById(req.params.docId, function(error, foundDoc) {
@@ -212,6 +212,7 @@ app.get('/users/:userId', function(req, res) {
   })
 })
 
+//get color styleMap
 app.get('/getStyleMap', function(req,res) {
   Color.find()
   .then((arr) => {res.json({arr: arr})})
@@ -219,19 +220,21 @@ app.get('/getStyleMap', function(req,res) {
 
 
 
+//Socket connection
 io.on('connection', function (socket) {
-  let colorArr = ['LightBlue','LightGray','LightGreen','LightPink','LightSalmon','MediumBlue',
-  'MidnightBlue','Olive','Orange','OrangeRed','Pink','Purple','Red','Sienna']
-
+  //Edit document
   socket.on('makeChange', function(data) {
     console.log('makechange', data)
     socket.to(socket.room).emit('receiveChange', {text:data.text, selection:data.selection}) //, color:data.color})
   })
+
+  //Text highlight
   socket.on('sendHighlight', function(data) {  //data has keys like makeChange- text, selection, color
     console.log('viewer', data.viewer)
     socket.to(socket.room).emit('receiveHighlight', {text:data.text, selection:data.selection, viewer:data.viewer})
   })
 
+  //Text color change
   socket.on('colorChange', function(color) {
     socket.to(socket.room).emit('receiveColorChange', color)
     Color.find({color:color})
@@ -247,6 +250,7 @@ io.on('connection', function (socket) {
     .catch(err => console.log('err', err))
   })
 
+  //Leave document
   socket.on('leaveRoom', (obj) => {
     console.log('leaveRoom input:', obj)
     const viewerNum = obj.viewer;
@@ -286,53 +290,35 @@ io.on('connection', function (socket) {
           if (err) console.log('could not join room of doc', roomDocId)
           else socket.emit('colorAssign', 'h1') //{color: 'LightBlue', viewer: 'h1'})
         })
-      } else if (!foundDoc.viewer2) {
-        Doc.findByIdAndUpdate(roomDocId, {viewer2: userId}, function(err, foundDoc2) {
-          if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', 'h2') //{color: 'LightGreen', viewer: 'h2'})
-        })
-      } else if (!foundDoc.viewer3) {
-        Doc.findByIdAndUpdate(roomDocId, {viewer3: userId}, function(err, foundDoc2) {
-          if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', 'h3') //{color: 'Red', viewer: 'h3'})
-        })
-      } else if (!foundDoc.viewer4) {
-        Doc.findByIdAndUpdate(roomDocId, {viewer4: userId}, function(err, foundDoc2) {
-          if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', 'h4') //{color: 'LightPink', viewer: 'h4'})
-        })
-      } else if (!foundDoc.viewer5) {
-        Doc.findByIdAndUpdate(roomDocId, {viewer5: userId}, function(err, foundDoc2) {
-          if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', 'h5') //{color: 'Orange', viewer: 'h5'})
-        })
-      } else if (!foundDoc.viewer6) {
-        Doc.findByIdAndUpdate(roomDocId, {viewer6: userId}, function(err, foundDoc2) {
-          if (err) console.log('could not join room of doc', roomDocId)
-          else socket.emit('colorAssign', 'h6') //{color: 'Purple', viewer: 'h6'})
-        })
+        } else if (!foundDoc.viewer2) {
+          Doc.findByIdAndUpdate(roomDocId, {viewer2: userId}, function(err, foundDoc2) {
+            if (err) console.log('could not join room of doc', roomDocId)
+            else socket.emit('colorAssign', 'h2') //{color: 'LightGreen', viewer: 'h2'})
+          })
+        } else if (!foundDoc.viewer3) {
+          Doc.findByIdAndUpdate(roomDocId, {viewer3: userId}, function(err, foundDoc2) {
+            if (err) console.log('could not join room of doc', roomDocId)
+            else socket.emit('colorAssign', 'h3') //{color: 'Red', viewer: 'h3'})
+          })
+        } else if (!foundDoc.viewer4) {
+          Doc.findByIdAndUpdate(roomDocId, {viewer4: userId}, function(err, foundDoc2) {
+            if (err) console.log('could not join room of doc', roomDocId)
+            else socket.emit('colorAssign', 'h4') //{color: 'LightPink', viewer: 'h4'})
+          })
+        } else if (!foundDoc.viewer5) {
+          Doc.findByIdAndUpdate(roomDocId, {viewer5: userId}, function(err, foundDoc2) {
+            if (err) console.log('could not join room of doc', roomDocId)
+            else socket.emit('colorAssign', 'h5') //{color: 'Orange', viewer: 'h5'})
+          })
+        } else if (!foundDoc.viewer6) {
+          Doc.findByIdAndUpdate(roomDocId, {viewer6: userId}, function(err, foundDoc2) {
+            if (err) console.log('could not join room of doc', roomDocId)
+            else socket.emit('colorAssign', 'h6') //{color: 'Purple', viewer: 'h6'})
+          })
+        }
       }
-    }
+    })
   })
-})
-
-  // socket.on('makeChange', function(data) {
-  //   console.log('makechange', data)
-  //   console.log('color', data.color)
-  //   socket.to(socket.room).emit('receiveChange', {text:data.text, selection:data.selection, color:data.color})
-  // })
-  // socket.on('room', (roomDocId) => {
-  //   if (socket.room) {
-  //     socket.leave(socket.room);
-  //     colorArr.unshift(roomDocId); //reset colorArr
-  //   } else {
-  //     let c = colorArr.shift(); //assign user first color
-  //     socket.emit('colorAssign', {color: c})
-  //     socket.room = roomDocId
-  //     socket.join(roomDocId)
-  //   }
-  // })
-
 })
 
 server.listen(port)

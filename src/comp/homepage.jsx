@@ -53,17 +53,19 @@ export default class Homepage extends React.Component {
           <Card style = {{marginTop: '50px'}}>
             <CardContent>
               <Typography variant = "display1"  style = {{display: 'flex', justifyContent: 'center'}}> Log In </Typography>
-              <FormControl style={buttonStyle}>
-                <InputLabel htmlFor="name-simple">Email</InputLabel>
-                <Input onChange={(e) => this.setState({email: e.target.value})} />
-              </FormControl>
-              <FormControl style={buttonStyle}>
-                <InputLabel htmlFor="name-simple">Password</InputLabel>
-                <Input type="password" onChange={(e) => this.setState({password:e.target.value})} />
-              </FormControl>
-              <div style = {{display: 'flex', justifyContent: 'center'}}>
-                <Button style={buttonStyle} onMouseDown={() => this.login()}  variant = "contained" color = "primary">Login</Button>
-                <Button style={buttonStyle} onMouseDown={() => this.props.changePage('signup', null, null)} variant = "contained">Sign Up</Button>
+              <div style={divStyle}>
+                <FormControl style={formStyle}>
+                  <InputLabel htmlFor="name-simple">Email</InputLabel>
+                  <Input onChange={(e) => this.setState({email: e.target.value})} />
+                </FormControl>
+                <FormControl style={formStyle}>
+                  <InputLabel htmlFor="name-simple">Password</InputLabel>
+                  <Input type="password" onChange={(e) => this.setState({password:e.target.value})} />
+                </FormControl>
+              </div>
+              <div style={divStyle}>
+                <Button style={newStyle} onMouseDown={() => this.login()}  variant = "contained" color = "primary">Login</Button>
+                <Button style={newStyle} onMouseDown={() => this.props.changePage('signup', null, null)} variant = "contained">Sign Up</Button>
               </div>
               <Typography variant = "subheading"> Powered By:
                 <ion-icon name = "logo-nodejs"/>
@@ -81,4 +83,21 @@ export default class Homepage extends React.Component {
 
 const buttonStyle = {
   margin: '10px'
+}
+
+const formStyle = {
+  width:'200px',
+  margin: '2px'
+}
+
+const divStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  flexDirection: 'column',
+  margin:'10px'
+}
+
+const newStyle = {
+  width: '150px',
+  margin:'7px'
 }

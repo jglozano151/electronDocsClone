@@ -54,21 +54,23 @@ export default class Signup extends React.Component {
           <Card style = {{marginBottom: '20px', display: 'flex', justifyContent: 'center'}}>
             <CardContent>
               <Typography style = {{display: 'flex', justifyContent: 'center'}} variant="display1">Sign Up</Typography>
-              <FormControl style={buttonStyle}>
-                <InputLabel htmlFor="name-simple">Name</InputLabel>
-                <Input onChange={(e) => this.setState({name: e.target.value})} />
-              </FormControl>
-              <FormControl style={buttonStyle}>
-                <InputLabel htmlFor="name-simple">Email</InputLabel>
-                <Input onChange={(e) => this.setState({email: e.target.value})} />
-              </FormControl>
-              <FormControl style={buttonStyle}>
-                <InputLabel htmlFor="name-simple">Password</InputLabel>
-                <Input type="password" onChange={(e) => this.setState({password: e.target.value})} />
-              </FormControl>
-              <div style = {{display: 'flex', justifyContent: 'center'}}>
-                <Button style={buttonStyle} onMouseDown={() => this.signup()}  variant = "contained" color = "primary">Sign Up</Button>
-                <Button style={buttonStyle} onMouseDown={() => this.props.changePage('homepage', null, null)} variant = "contained">Login</Button>
+              <div style={divStyle}>
+                <FormControl style={formStyle}>
+                  <InputLabel htmlFor="name-simple">Name</InputLabel>
+                  <Input onChange={(e) => this.setState({name: e.target.value})} />
+                </FormControl>
+                <FormControl style={formStyle}>
+                  <InputLabel htmlFor="name-simple">Email</InputLabel>
+                  <Input onChange={(e) => this.setState({email: e.target.value})} />
+                </FormControl>
+                <FormControl style={formStyle}>
+                  <InputLabel htmlFor="name-simple">Password</InputLabel>
+                  <Input type="password" onChange={(e) => this.setState({password: e.target.value})} />
+                </FormControl>
+              </div>
+              <div style = {divStyle}>
+                <Button style={newStyle} onMouseDown={() => this.signup()}  variant = "contained" color = "primary">Sign Up</Button>
+                <Button style={newStyle} onMouseDown={() => this.props.changePage('homepage', null, null)} variant = "contained">Login</Button>
               </div>
             </CardContent>
           </Card>
@@ -80,4 +82,21 @@ export default class Signup extends React.Component {
 
 const buttonStyle = {
   margin: '10px'
+}
+
+const formStyle = {
+  width:'200px',
+  margin: '2px'
+}
+
+const divStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  flexDirection: 'column',
+  margin:'10px'
+}
+
+const newStyle = {
+  width: '150px',
+  margin:'7px'
 }

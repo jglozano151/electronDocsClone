@@ -24,9 +24,6 @@ var userSchema = new mongoose.Schema({
   },
   docs: {
     type: Array
-  },
-  color: {
-    type: String
   }
 });
 

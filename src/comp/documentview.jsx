@@ -1,8 +1,3 @@
-//TO DO:
-//Alignment
-//highlight
-//cursor
-
 import React from 'react';
 import ColorPicker from 'material-ui-color-picker'
 import RaisedButton from 'material-ui/RaisedButton';
@@ -67,12 +62,9 @@ export default class DocumentView extends React.Component {
       bold: false,
       italic: false,
       underline: false,
-      leftAlign: true,
-      centerAlign: false,
-      rightAlign: false,
-      alignment: {'textAlign': 'left'},
       anchorEl: null,
       anchorEl2: null,
+      anchorEl3: null,
       newCollabs: [],
       myChange: false,
       socket: io.connect(this.props.url),
@@ -83,22 +75,29 @@ export default class DocumentView extends React.Component {
       receiveChangeHighlightColor: ''  //highlight color for other user
     }
 
-    // this.onChange = (editorState) => {
-    //   var contentState = editorState.getCurrentContent()
-    //   var selectionState = editorState.getSelection()
-    //   this.setState({editorState})
-    //   this.state.socket.emit('makeChange', {
-    //     text: JSON.stringify(convertToRaw(contentState)),
-    //     selection:selectionState,
-    //     color: this.state.emitColor
-    //   })
+    //Autosave
+    // function autosave() {
+    //   console.log('autosave')
+    //   setInterval(() => {
+    //     const contentState = this.state.editorState.getCurrentContent()
+    //     const saveData = JSON.stringify(convertToRaw(contentState))
+    //     fetch(this.props.url + '/savefile/' + this.props.docId, {
+    //       method: 'POST',
+    //       headers: {
+    //         'Content-Type': 'application/json'
+    //       },
+    //       body: JSON.stringify({userId: this.props.userId, text: saveData})
+    //     })
+    //     .catch(err=>console.log(err))
+    //   },5000)
     // }
+    // setTimeout(autosave,10000)
+
     this.onChange = (editorState) => {
       var contentState = editorState.getCurrentContent()
       var selectionState = editorState.getSelection()
 
       if (selectionState.isCollapsed()) {
-        console.log(true)
         this.setState({editorState})
         this.state.socket.emit('makeChange', {
           text: JSON.stringify(convertToRaw(contentState)),
@@ -156,7 +155,7 @@ export default class DocumentView extends React.Component {
       this.setState({editorState})
     })
 
-    fetch(this.props.url + '/getStyleMap', {
+    fetch(this.props.url + '/getStyleMap', { //get color StyleMap
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -169,7 +168,7 @@ export default class DocumentView extends React.Component {
       })
     })
     .then(() => {
-      fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, {
+      fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, { //grab all information about document
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -281,12 +280,19 @@ export default class DocumentView extends React.Component {
     this.onChange(EditorState.createWithContent(contentState))
   }
   myBlockStyleFn = (contentBlock) => {
-    return this.state.alignment
+    console.log(contentBlock.getType())
+    return contentBlock.getType()
   }
   setAlignment = (e, align) => {
     e.preventDefault()
-    // this.state.socket.emit('alignmentChange', align)
-    this.setState({alignment: align})
+    this.setState({
+      editorState: RichUtils.toggleBlockType(this.state.editorState, align),
+      alignment: align
+    })
+  }
+  setFontSize = (e, font) => {
+    e.preventDefault()
+    this.setState({editorState: RichUtils.toggleBlockType(this.state.editorState, font)})
   }
   saveFile(e) {
     e.preventDefault()
@@ -321,6 +327,7 @@ export default class DocumentView extends React.Component {
   // Font Color, Font Size, Left/center/right align paragraph, bullet/numbered lists
   render() {
     const { anchorEl } = this.state
+    const { anchorEl3 } = this.state
     return (
       <div>
         <Card>
@@ -328,8 +335,7 @@ export default class DocumentView extends React.Component {
             <Typography variant = "headline">
               <Button onClick = {() => this.viewList(this.props.userId)}
                 style = {{marginRight: '20px'}}
-                variant = "contained"
-                color = "primary">
+                variant = "contained">
                 Back to DocList
               </Button>
               <ion-icon name = "create"/> {this.state.docName}
@@ -393,13 +399,13 @@ export default class DocumentView extends React.Component {
             </div>
             <div>
               <Typography variant = "caption" style = {{textAlign: 'center'}}> Text Alignment </Typography>
-            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,{textAlign: 'left'})}>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,'leftAlign')}>
               <ListIcon/>
             </Button>
-            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,{textAlign: 'center'})}>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,'centerAlign')}>
               <ReorderIcon/>
             </Button>
-            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,{textAlign: 'right'})}>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,'rightAlign')}>
               <TocIcon/>
             </Button>
             </div>
@@ -411,7 +417,22 @@ export default class DocumentView extends React.Component {
                 onChange={color => this.changeColor(color)}
               />
             </div>
-
+            <div>
+              <Button aria-owns = {anchorEl3 ? 'simple-menu' : null} aria-haspopup = "true"
+                onClick = {this.openFonts}
+              > Font Size </Button>
+              <Menu id = "simple-menu" anchorEl = {anchorEl3} open = {Boolean(anchorEl3)} onClose = {this.handleClose3}>
+                <MenuItem onClick = {(e) => this.setFontSize(e, 'eightpt')}> 8pt </MenuItem>
+                <MenuItem onClick = {(e) => this.setFontSize(e, 'tenpt')}> 10pt </MenuItem>
+                <MenuItem onClick = {(e) => this.setFontSize(e, 'twelvept')}> 12pt </MenuItem>
+                <MenuItem onClick = {(e) => this.setFontSize(e, 'fourteenpt')}> 14pt </MenuItem>
+                <MenuItem onClick = {(e) => this.setFontSize(e, 'sixteenpt')}> 16pt </MenuItem>
+                <MenuItem onClick = {(e) => this.setFontSize(e, 'eighteenpt')}> 18pt </MenuItem>
+                <MenuItem onClick = {(e) => this.setFontSize(e, 'twentypt')}> 20pt </MenuItem>
+                <MenuItem onClick = {(e) => this.setFontSize(e, 'twentytwopt')}> 22pt </MenuItem>
+                <MenuItem onClick = {(e) => this.setFontSize(e, 'twentyfourpt')}> 24pt </MenuItem>
+              </Menu>
+            </div>
           </div>
           <Editor customStyleMap={styleMap} blockStyleFn={this.myBlockStyleFn} style = {editorStyle}
                   editorState = {this.state.editorState} onChange = {this.onChange.bind(this)}/>
@@ -428,13 +449,19 @@ export default class DocumentView extends React.Component {
 
 const styleMap = {
   'left': {
-    textAlignment: 'left'
+    textDecoration: {
+      textAlignment: 'left'
+    }
   },
   'center': {
-    textAlign: 'center'
+    textDecoration: {
+      textAlign: 'center'
+    }
   },
   'right': {
-    textAlignment: 'right'
+    textDecoration: {
+      textAlignment: 'right'
+    }
   },
   'h1': { //make this color the color received from receiveChange
     backgroundColor: 'LightBlue'
