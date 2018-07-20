@@ -53,7 +53,7 @@ export default class Homepage extends React.Component {
           <Card style = {{marginTop: '50px'}}>
             <CardContent>
               <Typography variant = "display1"  style = {{display: 'flex', justifyContent: 'center'}}> Log In </Typography>
-              <FormControl>
+              <FormControl style={buttonStyle}>
                 <InputLabel htmlFor="name-simple">Email</InputLabel>
                 <Input onChange={(e) => this.setState({email: e.target.value})} />
               </FormControl>
@@ -62,7 +62,7 @@ export default class Homepage extends React.Component {
                 <Input type="password" onChange={(e) => this.setState({password:e.target.value})} />
               </FormControl>
               <div style = {{display: 'flex', justifyContent: 'center'}}>
-                <Button style={buttonStyle} onMouseDown={() => this.login()}  variant = "contained">Login</Button>
+                <Button style={buttonStyle} onMouseDown={() => this.login()}  variant = "contained" color = "primary">Login</Button>
                 <Button style={buttonStyle} onMouseDown={() => this.props.changePage('signup', null, null)} variant = "contained">Sign Up</Button>
               </div>
               <Typography variant = "subheading"> Powered By:

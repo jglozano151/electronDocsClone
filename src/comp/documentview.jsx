@@ -1,9 +1,5 @@
 //TO DO:
-//fix displaying names instead of id on DocList
-//displaying collaborators on DocumentView
-//color text
 //Alignment
-//scrolling
 //highlight
 //cursor
 
@@ -31,7 +27,6 @@ import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToR
 
 // SOCKET
 const io = require('socket.io-client')
-let fontcolor;
 
 // Constants for search & highlight functionality
 const generateDecorator = (highlightTerm) => {
@@ -75,6 +70,7 @@ export default class DocumentView extends React.Component {
       leftAlign: true,
       centerAlign: false,
       rightAlign: false,
+      alignment: {'textAlign': 'left'},
       anchorEl: null,
       anchorEl2: null,
       newCollabs: [],
@@ -83,36 +79,74 @@ export default class DocumentView extends React.Component {
       history: [],
       search: '',
       replace: '',
-      fontcolor: '',
       emitColor: '',  //color that this socket emits when making a change
       receiveChangeHighlightColor: ''  //highlight color for other user
     }
 
+    // this.onChange = (editorState) => {
+    //   var contentState = editorState.getCurrentContent()
+    //   var selectionState = editorState.getSelection()
+    //   this.setState({editorState})
+    //   this.state.socket.emit('makeChange', {
+    //     text: JSON.stringify(convertToRaw(contentState)),
+    //     selection:selectionState,
+    //     color: this.state.emitColor
+    //   })
+    // }
     this.onChange = (editorState) => {
       var contentState = editorState.getCurrentContent()
       var selectionState = editorState.getSelection()
-      this.setState({editorState})
-      this.state.socket.emit('makeChange', {
-        text: JSON.stringify(convertToRaw(contentState)),
-        selection:selectionState,
-        color: this.state.emitColor
-      })
+
+      if (selectionState.isCollapsed()) {
+        console.log(true)
+        this.setState({editorState})
+        this.state.socket.emit('makeChange', {
+          text: JSON.stringify(convertToRaw(contentState)),
+          selection: selectionState
+        })
+      } else {
+        this.setState({editorState})
+        this.state.socket.emit('sendHighlight', {
+          text: JSON.stringify(convertToRaw(contentState)),
+          selection: selectionState,
+          viewer: this.state.viewer
+        })
+      }
     }
   }
 
   componentDidMount() {
     //this.state.socket.emit('room', this.props.docId);
     this.state.socket.emit('room', {docId: this.props.docId, userId: this.props.userId});
-    this.state.socket.on('colorAssign', (colorObj) => {  //colorObj has color: String,  viewer: #
-      console.log('colorObj', colorObj)
-      this.setState({emitColor: colorObj.color, viewer: colorObj.viewer})
-      console.log("emitColor in state", this.state.emitColor)
+    this.state.socket.on('colorAssign', (viewer) => {  //colorObj has color: String,  viewer: #
+      console.log('viewer string input', viewer)
+      this.setState({viewer})  //, emitColor: colorObj.color})
+    })
+
+    //listening for a highlight
+    this.state.socket.on('receiveHighlight', (data) => {  //data has keys text, selection, viewer
+      console.log('viewer on client receiveHighlight', data.viewer)
+
+      var contentState = this.state.editorState.getCurrentContent()
+      //this.onChange(EditorState.createWithContent(contentState))
+      var selectionState = SelectionState.createEmpty()  //moved to receive highlight, add new highlight portion
+      var updatedSelectionState = selectionState.merge(data.selection)
+      // var selectionState = this.state.editorState.getSelection()  //get previous highlight
+      // contentState = Modifier.removeInlineStyle(contentState, selectionState, this.state.viewer)  //remove previous highlight
+      contentState = Modifier.applyInlineStyle(contentState,updatedSelectionState, data.viewer)
+      let editorState = EditorState.createWithContent(contentState)
+      this.setState({editorState})
+      //this.onChange(EditorState.createWithContent(contentState))
+    })
+
+    this.state.socket.on('receiveColorChange', (color) => {
+      if (!styleMap.hasOwnProperty(color)) styleMap[color] = {color:color}
     })
 
     this.state.socket.on('receiveChange', (data) => {
       console.log('highlight color of received text', data.color)  //get color of highlight with data.color
       this.setState({receiveChangeHighlightColor: data.color})
-      console.log('Receiving from server: ', data.text)
+      //console.log('Receiving from server: ', data.text)
       let contentState = convertFromRaw(JSON.parse(data.text))
       var selectionState = SelectionState.createEmpty()
       var updatedSelectionState = selectionState.merge(data.selection)
@@ -122,45 +156,58 @@ export default class DocumentView extends React.Component {
       this.setState({editorState})
     })
 
-    console.log('inlinestyles', this.state.editorState.getCurrentInlineStyle())
-
-
-
-    fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+    fetch(this.props.url + '/getStyleMap', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => (response.json()))
+    .then((obj) => {
+      obj.arr.forEach((item) => {
+        styleMap[item.color] = item.styleMap
       })
-      .then(response => (response.json()))
-      .then((doc) => {
-        this.setState({docName: doc.title, owner: doc.owner, history: doc.revision})
-        if (doc.revision) {
-          let text = convertFromRaw(JSON.parse(doc.revision[doc.revision.length-1].text))
-          let editorState = EditorState.createWithContent(text)
-          this.setState({
-            editorState: editorState
-          })
-        }
-        let collaborators = []
-        Promise.all(
-          doc.collaborators.map((collab) => {
-            fetch(this.props.url + '/users/' + collab, {
-              headers: {
-                'Content-Type': 'application/json'
-              }
+    })
+    .then(() => {
+      fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        .then(response => (response.json()))
+        .then((doc) => {
+          this.setState({docName: doc.title, owner: doc.owner, history: doc.revision})
+          if (doc.revision) {
+            let text = convertFromRaw(JSON.parse(doc.revision[doc.revision.length-1].text))
+            let editorState = EditorState.createWithContent(text)
+            this.setState({
+              editorState: editorState
             })
-              .then(response => response.json())
-              .then((user) => {
-                collaborators.push(user.name)
+          }
+          let collaborators = []
+          Promise.all(
+            doc.collaborators.map((collab) => {
+              fetch(this.props.url + '/users/' + collab, {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
               })
-          })
-          .then(this.setState({collaborators}))
-        )
-      })
-      .catch((err) => {
-        console.log(err)
-      })
+                .then(response => response.json())
+                .then((user) => {
+                  collaborators.push(user.name)
+                })
+            })
+            .then(this.setState({collaborators}))
+          )
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+    })
+    .catch((err) => {
+      console.log('getStyleMap error', err)
+    })
   }
 
   viewList(userId) {
@@ -225,16 +272,21 @@ export default class DocumentView extends React.Component {
       this.setState({underline: false}) : this.setState({underline: true})
     this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, 'UNDERLINE'))
   }
-  colorpicker(color) {
-    fontcolor=color
-    console.log(fontcolor)
-    this.changeColor()
-  }
-  changeColor() {
+  changeColor(color) {
+    this.state.socket.emit('colorChange', color)
     var contentState = this.state.editorState.getCurrentContent()
     var selectionState = this.state.editorState.getSelection()
-    contentState = Modifier.applyInlineStyle(contentState,selectionState,`COLOR_${fontcolor}`)
+    if (!styleMap.hasOwnProperty(color)) styleMap[color] = {color:color}
+    contentState = Modifier.applyInlineStyle(contentState,selectionState,`${color}`)
     this.onChange(EditorState.createWithContent(contentState))
+  }
+  myBlockStyleFn = (contentBlock) => {
+    return this.state.alignment
+  }
+  setAlignment = (e, align) => {
+    e.preventDefault()
+    // this.state.socket.emit('alignmentChange', align)
+    this.setState({alignment: align})
   }
   saveFile(e) {
     e.preventDefault()
@@ -269,14 +321,6 @@ export default class DocumentView extends React.Component {
   // Font Color, Font Size, Left/center/right align paragraph, bullet/numbered lists
   render() {
     const { anchorEl } = this.state
-    const styleMap = {
-      'HIGHLIGHT': { //make this color the color received from receiveChange
-        backgroundColor: this.state.receiveChangeHighlightColor //'LightBlue'
-      },
-      [`COLOR_${fontcolor}`] : {
-        color: fontcolor
-      }
-    }
     return (
       <div>
         <Card>
@@ -322,6 +366,7 @@ export default class DocumentView extends React.Component {
               </Popover>
             </Typography>
           </CardContent>
+          <Typography style = {{marginLeft: '20px'}} variant="caption">Document ID: {this.props.docId}</Typography>
         </Card>
         <Card style = {buttonStyle}>
           <CardContent>
@@ -348,13 +393,13 @@ export default class DocumentView extends React.Component {
             </div>
             <div>
               <Typography variant = "caption" style = {{textAlign: 'center'}}> Text Alignment </Typography>
-            <Button style = {buttonStyle} onMouseDown = {(e) => this.alignLeft(e)}>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,{textAlign: 'left'})}>
               <ListIcon/>
             </Button>
-            <Button style = {buttonStyle} onMouseDown = {(e) => this.alignCenter(e)}>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,{textAlign: 'center'})}>
               <ReorderIcon/>
             </Button>
-            <Button style = {buttonStyle} onMouseDown = {(e) => this.alignRight(e)}>
+            <Button style = {buttonStyle} onMouseDown = {(e) => this.setAlignment(e,{textAlign: 'right'})}>
               <TocIcon/>
             </Button>
             </div>
@@ -363,12 +408,13 @@ export default class DocumentView extends React.Component {
               <ColorPicker
                 name='color'
                 defaultValue='#000'
-                onChange={color => this.colorpicker(color)}
+                onChange={color => this.changeColor(color)}
               />
             </div>
 
           </div>
-          <Editor customStyleMap={styleMap} style = {editorStyle} editorState = {this.state.editorState} onChange = {this.onChange.bind(this)}/>
+          <Editor customStyleMap={styleMap} blockStyleFn={this.myBlockStyleFn} style = {editorStyle}
+                  editorState = {this.state.editorState} onChange = {this.onChange.bind(this)}/>
         </Card>
 
       </div>
@@ -379,6 +425,36 @@ export default class DocumentView extends React.Component {
 {/* <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.changeColor(e)}>
   Color
 </RaisedButton> */}
+
+const styleMap = {
+  'left': {
+    textAlignment: 'left'
+  },
+  'center': {
+    textAlign: 'center'
+  },
+  'right': {
+    textAlignment: 'right'
+  },
+  'h1': { //make this color the color received from receiveChange
+    backgroundColor: 'LightBlue'
+  },
+  'h2': {
+    backgroundColor: 'LightGreen'
+  },
+  'h3': {
+    backgroundColor: 'Red'
+  },
+  'h4': {
+    backgroundColor: 'LightPink'
+  },
+  'h5': {
+    backgroundColor: 'Orange'
+  },
+  'h6': {
+    backgroundColor: 'Purple'
+  }
+}
 
 const editorStyle = {
   margin: '20px',
