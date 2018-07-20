@@ -223,7 +223,12 @@ io.on('connection', function (socket) {
     socket.to(socket.room).emit('receiveChange', {text:data.text, selection:data.selection, color:data.color})
   })
 
+  socket.on('colorChange', function(color) {
+    socket.emit('receiveColorChange', color)
+  })
+
   socket.on('leaveRoom', (obj) => {
+    console.log('leaveRoom input:', obj)
     const viewerNum = obj.viewer;
     const docId = obj.docId;
     switch(viewerNum) {

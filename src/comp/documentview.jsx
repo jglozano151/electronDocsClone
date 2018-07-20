@@ -1,9 +1,6 @@
 //TO DO:
-//fix displaying names instead of id on DocList
-//displaying collaborators on DocumentView
 //color text
 //Alignment
-//scrolling
 //highlight
 //cursor
 
@@ -31,7 +28,6 @@ import {ContentState, Editor, EditorState, RichUtils, convertFromRaw, convertToR
 
 // SOCKET
 const io = require('socket.io-client')
-let fontcolor;
 
 // Constants for search & highlight functionality
 const generateDecorator = (highlightTerm) => {
@@ -83,7 +79,6 @@ export default class DocumentView extends React.Component {
       history: [],
       search: '',
       replace: '',
-      fontcolor: '',
       emitColor: '',  //color that this socket emits when making a change
       receiveChangeHighlightColor: ''  //highlight color for other user
     }
@@ -107,6 +102,10 @@ export default class DocumentView extends React.Component {
       console.log('colorObj', colorObj)
       this.setState({emitColor: colorObj.color, viewer: colorObj.viewer})
       console.log("emitColor in state", this.state.emitColor)
+    })
+
+    this.state.socket.on('receiveColorChange', (color) => {
+      if (!styleMap.hasOwnProperty(color)) styleMap[color] = {color:color}
     })
 
     this.state.socket.on('receiveChange', (data) => {
@@ -225,15 +224,12 @@ export default class DocumentView extends React.Component {
       this.setState({underline: false}) : this.setState({underline: true})
     this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, 'UNDERLINE'))
   }
-  colorpicker(color) {
-    fontcolor=color
-    console.log(fontcolor)
-    this.changeColor()
-  }
-  changeColor() {
+  changeColor(color) {
+    this.state.socket.emit('colorChange', color)
     var contentState = this.state.editorState.getCurrentContent()
     var selectionState = this.state.editorState.getSelection()
-    contentState = Modifier.applyInlineStyle(contentState,selectionState,`COLOR_${fontcolor}`)
+    if (!styleMap.hasOwnProperty(color)) styleMap[color] = {color:color}
+    contentState = Modifier.applyInlineStyle(contentState,selectionState,`${color}`)
     this.onChange(EditorState.createWithContent(contentState))
   }
   saveFile(e) {
@@ -269,14 +265,6 @@ export default class DocumentView extends React.Component {
   // Font Color, Font Size, Left/center/right align paragraph, bullet/numbered lists
   render() {
     const { anchorEl } = this.state
-    const styleMap = {
-      'HIGHLIGHT': { //make this color the color received from receiveChange
-        backgroundColor: this.state.receiveChangeHighlightColor //'LightBlue'
-      },
-      [`COLOR_${fontcolor}`] : {
-        color: fontcolor
-      }
-    }
     return (
       <div>
         <Card>
@@ -363,7 +351,7 @@ export default class DocumentView extends React.Component {
               <ColorPicker
                 name='color'
                 defaultValue='#000'
-                onChange={color => this.colorpicker(color)}
+                onChange={color => this.changeColor(color)}
               />
             </div>
 
@@ -379,6 +367,12 @@ export default class DocumentView extends React.Component {
 {/* <RaisedButton style = {buttonStyle} onMouseDown = {(e) => this.changeColor(e)}>
   Color
 </RaisedButton> */}
+
+const styleMap = {
+  'HIGHLIGHT': { //make this color the color received from receiveChange
+    backgroundColor: 'LightBlue'
+  },
+}
 
 const editorStyle = {
   margin: '20px',
