@@ -1,4 +1,4 @@
-
+// Set up express server and import dependencies
 var express = require('express');
 var path = require('path')
 var app = express()
@@ -6,15 +6,11 @@ var bodyParser = require('body-parser');
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 const port = 3000;
-// when push to heroku, this will be process.env.PORT
-// require something else for socket variable?//
-// which day/exercise did we do for sockets?
-// slapjack, week 5
-// getting rid of linter? remove eslintrc
 
-app.use(express.static(path.join(__dirname, 'src')));  //tells express where to find my frontend code
+app.use(express.static(path.join(__dirname, 'src')));
 app.use(bodyParser.json())
 
+// Set up passport, import models
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var models = require('./models.js');
@@ -22,7 +18,7 @@ var User = models.User
 var Doc = models.Doc
 var Color = models.Color
 
-// set passport middleware to first try local strategy
+// Passport middleware - Local strategy
 passport.use(new LocalStrategy( function (username, password, cb){
   // User model has email, password, name
   models.User.findOne({ email: username }, function (err, user) {
@@ -86,7 +82,7 @@ app.get('/logout', function(req, res){
   res.json({success: true});
 });
 
-// Create new document
+// Create new document. Maximum 6 collaborators per document 
 app.post('/newDoc', function(req, res) {
   const newDoc = new Doc ({
    owner: req.body.userId,

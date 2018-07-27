@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, Element , Events, animateScroll as scroll, scrollSpy, scroller } from 'react-scroll'
 
-const url="https://4d178812.ngrok.io"
+const url = process.env.NGROK
 
 const Homepage = require('./comp/homepage').default
 const Signup = require('./comp/signup').default
