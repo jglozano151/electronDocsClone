@@ -155,7 +155,7 @@ export default class DocumentView extends React.Component {
       this.setState({editorState})
     })
 
-    fetch(this.props.url + '/getStyleMap', { //get color StyleMap
+    fetch('/getStyleMap', { //get color StyleMap
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -168,7 +168,7 @@ export default class DocumentView extends React.Component {
       })
     })
     .then(() => {
-      fetch(this.props.url + '/documentview/' + this.props.userId + '/' + this.props.docId, { //grab all information about document
+      fetch('/documentview/' + this.props.userId + '/' + this.props.docId, { //grab all information about document
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -232,7 +232,7 @@ export default class DocumentView extends React.Component {
   }
   saveCollabs = () => {
     console.log(this.state.newCollabs)
-    fetch(this.props.url + '/addCollaborators', {
+    fetch('/addCollaborators', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -298,7 +298,7 @@ export default class DocumentView extends React.Component {
     e.preventDefault()
     const contentState = this.state.editorState.getCurrentContent()
     const saveData = JSON.stringify(convertToRaw(contentState))
-    fetch(this.props.url + '/savefile/' + this.props.docId, {
+    fetch('/savefile/' + this.props.docId, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

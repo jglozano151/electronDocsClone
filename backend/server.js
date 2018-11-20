@@ -5,7 +5,7 @@ var app = express()
 var bodyParser = require('body-parser');
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
-const port = 3000;
+const port = 4000;
 
 app.use(express.static(path.join(__dirname, 'src')));
 app.use(bodyParser.json())
@@ -82,7 +82,7 @@ app.get('/logout', function(req, res){
   res.json({success: true});
 });
 
-// Create new document. Maximum 6 collaborators per document 
+// Create new document. Maximum 6 collaborators per document
 app.post('/newDoc', function(req, res) {
   const newDoc = new Doc ({
    owner: req.body.userId,

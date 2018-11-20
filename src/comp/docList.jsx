@@ -29,7 +29,7 @@ export default class DocList extends React.Component {
 
  //Fetch all documents for a user
  componentDidMount() {
-   fetch(this.props.url+'/getDocList/' + this.props.userId, {
+   fetch('/getDocList/' + this.props.userId, {
      method: 'GET',
      headers: {
        'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ export default class DocList extends React.Component {
 
  //Create new document as author
  saveNewModal() {
-   fetch(this.props.url+'/newDoc', {
+   fetch('/newDoc', {
      method: 'POST',
      headers: {
        'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export default class DocList extends React.Component {
 
  //Join a document as collaborator
  joinCollabModal() {
-   fetch(this.props.url+'/joinDoc', {
+   fetch('/joinDoc', {
      method: 'POST',
      headers: {
        'Content-Type': 'application/json',
@@ -139,7 +139,7 @@ export default class DocList extends React.Component {
 
 //logout
 logout() {
-  fetch(this.props.url+'/logout')
+  fetch('/logout')
   .then(response => (response.json()))
   .then((res) => {
     if (res.success) {

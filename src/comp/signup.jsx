@@ -25,7 +25,7 @@ export default class Signup extends React.Component {
 
   //Sign up
   signup() {
-    fetch(this.props.url+'/signup', {
+    fetch('/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -25,7 +25,7 @@ export default class Homepage extends React.Component {
 
   //Log In
   login() {
-    fetch(this.props.url+'/login', {
+    fetch('/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,24 +55,16 @@ export default class Homepage extends React.Component {
               <Typography variant = "display1"  style = {{display: 'flex', justifyContent: 'center'}}> Log In </Typography>
               <div style={divStyle}>
                 <FormControl style={formStyle}>
-                  <InputLabel htmlFor="name-simple">Email</InputLabel>
-                  <Input onChange={(e) => this.setState({email: e.target.value})} />
+                  <Input onChange={(e) => this.setState({email: e.target.value})} placeholder = "Username" />
                 </FormControl>
                 <FormControl style={formStyle}>
-                  <InputLabel htmlFor="name-simple">Password</InputLabel>
-                  <Input type="password" onChange={(e) => this.setState({password:e.target.value})} />
+                  <Input type="password" onChange={(e) => this.setState({password: e.target.value})} placeholder = "Password" />
                 </FormControl>
               </div>
               <div style={divStyle}>
                 <Button style={newStyle} onMouseDown={() => this.login()}  variant = "contained" color = "primary">Login</Button>
                 <Button style={newStyle} onMouseDown={() => this.props.changePage('signup', null, null)} variant = "contained">Sign Up</Button>
               </div>
-              <Typography variant = "subheading"> Powered By:
-                <ion-icon name = "logo-nodejs"/>
-                <ion-icon name = "logo-npm"/>
-                <ion-icon name = "logo-html5"/>
-                <ion-icon name = "logo-github"/>
-              </Typography>
             </CardContent>
           </Card>
         </div>

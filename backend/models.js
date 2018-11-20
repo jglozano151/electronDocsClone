@@ -5,7 +5,7 @@ if (! process.env.MONGODB_URI) {
   process.exit(1);
 }
 
-mongoose.connect(process.env.MONGOB_URI);
+mongoose.connect(process.env.MONGODB_URI);
 
 var userSchema = new mongoose.Schema({
   email: {
